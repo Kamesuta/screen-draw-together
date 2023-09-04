@@ -1,0 +1,25 @@
+﻿<Window x:Class="screen_draw_together.Prototype.SyncInkCanvas"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:screen_draw_together.Prototype"
+        mc:Ignorable="d"
+        Title="SyncInkCanvas" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+        <local:DrawInkCanvas x:Name="InkCanvas1" Background="{x:Null}" MoveEnabled="False" ResizeEnabled="False" Cursor="Pen" Grid.Column="0" EditingModeInverted="EraseByPoint">
+            <InkCanvas.DefaultDrawingAttributes>
+                <DrawingAttributes Color="#FFFF5656" FitToCurve="True" Height="5" IgnorePressure="False" IsHighlighter="False" StylusTip="Ellipse" StylusTipTransform="Identity" Width="5"/>
+            </InkCanvas.DefaultDrawingAttributes>
+        </local:DrawInkCanvas>
+        <local:DrawInkCanvas x:Name="InkCanvas2" Background="{x:Null}" MoveEnabled="False" ResizeEnabled="False" Cursor="Pen" Grid.Column="1" EditingModeInverted="EraseByPoint">
+            <InkCanvas.DefaultDrawingAttributes>
+                <DrawingAttributes Color="#FFFF5656" FitToCurve="True" Height="5" IgnorePressure="False" IsHighlighter="False" StylusTip="Ellipse" StylusTipTransform="Identity" Width="5"/>
+            </InkCanvas.DefaultDrawingAttributes>
+        </local:DrawInkCanvas>
+    </Grid>
+</Window>
