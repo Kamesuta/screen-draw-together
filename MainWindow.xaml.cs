@@ -28,6 +28,10 @@ namespace screen_draw_together
 
         private SyncInkCanvas? syncInkCanvas;
 
+        private WebRTCSyncInkCanvas? webRtcSyncInkCanvasA;
+        private WebRTCSyncInkCanvas? webRtcSyncInkCanvasB;
+        private WebRTCSyncInkCanvas? webRtcSyncInkCanvasC;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -72,6 +76,50 @@ namespace screen_draw_together
         private void SyncInkCanvasSync_Click(object sender, RoutedEventArgs e)
         {
             syncInkCanvas?.Sync();
+        }
+
+        private void WebRTCSyncInkCanvasA_Click(object sender, RoutedEventArgs e)
+        {
+            CreateWebRTCSyncInkCanvas("a", ref webRtcSyncInkCanvasA);
+        }
+
+        private void WebRTCSyncInkCanvasB_Click(object sender, RoutedEventArgs e)
+        {
+            CreateWebRTCSyncInkCanvas("b", ref webRtcSyncInkCanvasB);
+        }
+
+        private void WebRTCSyncInkCanvasC_Click(object sender, RoutedEventArgs e)
+        {
+            CreateWebRTCSyncInkCanvas("c", ref webRtcSyncInkCanvasC);
+        }
+
+        private void CreateWebRTCSyncInkCanvas(string presetId, ref WebRTCSyncInkCanvas? canvas)
+        {
+            string? roomId = RoomIDTextBox.Text.Length == 0 ? null : RoomIDTextBox.Text;
+            bool isHost = roomId == null;
+            void onRoomIdChanged(string newRoomId)
+            {
+                if (isHost)
+                {
+                    RoomIDTextBox.Text = newRoomId;
+                }
+            }
+
+            if (canvas == null)
+            {
+                canvas = new WebRTCSyncInkCanvas(presetId, isHost, roomId, onRoomIdChanged);
+                canvas.Show();
+            }
+            else
+            {
+                canvas.Close();
+                canvas = null;
+            }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }

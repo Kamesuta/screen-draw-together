@@ -1,0 +1,3 @@
+[submodule "FireSharp"]
+	path = FireSharp
+	url = https://github.com/ziyasal/FireSharp.git

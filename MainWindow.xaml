@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:screen_draw_together"
         mc:Ignorable="d"
-        Title="MainWindow" Height="313" Width="499" Topmost="True">
+        Title="MainWindow" Height="313" Width="499" Topmost="True" Closing="Window_Closing">
     <Grid>
         <GroupBox Header="AlphaOverlay" Height="47" VerticalAlignment="Top" Margin="10,10,10,0">
             <StackPanel Orientation="Horizontal">
@@ -20,6 +20,14 @@
                 <Button x:Name="SyncInkCanvasOpen" Content="Open" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SyncInkCanvasOpen_Click"/>
                 <Button x:Name="SyncInkCanvasClose" Content="Close" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SyncInkCanvasClose_Click"/>
                 <Button x:Name="SyncInkCanvasSync" Content="Sync" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SyncInkCanvasSync_Click"/>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="WebRTCSyncInkCanvas" Height="47" VerticalAlignment="Top" Margin="10,102,10,0">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="WebRTCSyncInkCanvasA" Content="A" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="WebRTCSyncInkCanvasA_Click"/>
+                <Button x:Name="WebRTCSyncInkCanvasB" Content="B" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="WebRTCSyncInkCanvasB_Click"/>
+                <Button x:Name="WebRTCSyncInkCanvasC" Content="C" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="WebRTCSyncInkCanvasC_Click"/>
+                <TextBox x:Name="RoomIDTextBox" Margin="5,0,0,0" TextWrapping="Wrap" Text="" Width="265" Height="20"/>
             </StackPanel>
         </GroupBox>
     </Grid>
