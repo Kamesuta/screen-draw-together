@@ -1,25 +1,17 @@
 ﻿using Firebase.Auth;
 using Firebase.Auth.Repository;
+using FirebaseWebRtcSignaling;
 using FireSharp.Core.Config;
 using SIPSorcery.Net;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Input.StylusPlugIns;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using WebRTCFirebaseSignaling;
 
 namespace screen_draw_together.Prototype
 {
@@ -92,9 +84,9 @@ namespace screen_draw_together.Prototype
             OurIdCallback(ClientId);
         }
 
-        public WebRTCFirebaseSignalingConnector Connector { get; private set; }
+        public WebRTCFirebaseSignaling.SignalingConnector Connector { get; private set; }
         public List<RTCDataChannel> ChatChannels { get; private set; } = new();
-        private IDisposable _connection;
+        private Action _dispose = delegate { };
 
         private async Task Connect()
         {
@@ -116,6 +108,47 @@ namespace screen_draw_together.Prototype
                     },
                 }
             };
+
+
+            // Firebase config
+            var firebaseConfig = new FirebaseConfig()
+            {
+                BasePath = "https://screen-draw-together-default-rtdb.asia-southeast1.firebasedatabase.app",
+                AuthSecret = ClientIdToken,
+            };
+
+            //using var signaler = new NamedPipeSignaler.NamedPipeSignaler(pc, "testpipe");
+            Connector = new WebRTCFirebaseSignaling.SignalingConnector(ClientId)
+            {
+                FirebaseConfig = firebaseConfig,
+                CreatePeerConnection = CreatePeerConnection,
+            };
+
+            // Setup signaling
+            if (IsHost)
+            {
+                Debug.WriteLine($"Starting host with Client ID '{ClientId}'...");
+                var host = await Connector.StartAsHost();
+
+                // 終了時に完了
+                _dispose += () =>
+                {
+                    host.Dispose();
+                };
+            }
+            else
+            {
+                Debug.WriteLine($"Starting guest with Client ID '{ClientId}' and Room ID '{RoomId}'...");
+                var signaler = await Connector.StartAsGuest(RoomId);
+
+                // 終了時に完了
+                _dispose += () =>
+                {
+                    signaler.PeerConnection.Dispose();
+                    signaler.Dispose();
+                };
+            }
+
 
             async Task<RTCPeerConnection> CreatePeerConnection()
             {
@@ -165,50 +198,25 @@ namespace screen_draw_together.Prototype
                     }
                 };
 
+                peerConnection.onconnectionstatechange += (state) =>
+                {
+                    // シグナリングが完了(接続が確立された or 切断された)場合、シグナリングを終了します
+                    if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.disconnected)
+                    {
+                        Debug.WriteLine($"Exiting connection as connection state is now {state}.");
+                        // シグナリングを終了します
+                        peerConnection.Dispose();
+                        ChatChannels.Remove(chatChannel);
+                    }
+                };
+
                 return peerConnection;
             }
-
-
-            // Firebase config
-            var firebaseConfig = new FirebaseConfig()
-            {
-                BasePath = "https://screen-draw-together-default-rtdb.asia-southeast1.firebasedatabase.app",
-                AuthSecret = ClientIdToken,
-            };
-
-            //using var signaler = new NamedPipeSignaler.NamedPipeSignaler(pc, "testpipe");
-            Connector = new WebRTCFirebaseSignaling.WebRTCFirebaseSignalingConnector(ClientId)
-            {
-                FirebaseConfig = firebaseConfig,
-                CreatePeerConnection = CreatePeerConnection,
-            };
-
-            // Setup signaling
-            if (IsHost)
-            {
-                Debug.WriteLine($"Starting host with Client ID '{ClientId}'...");
-                var host = await Connector.StartAsHost();
-                _connection = host;
-
-                // とりあえず今回はHostが終了したら全ピアを解放
-                host.OnDispose += () =>
-                {
-                    host.PeerList.ForEach((peer) => peer.Dispose());
-                    host.PeerList.Clear();
-                };
-            }
-            else
-            {
-                Debug.WriteLine($"Starting guest with Client ID '{ClientId}' and Room ID '{RoomId}'...");
-                var signaler = await Connector.StartAsGuest(RoomId);
-                _connection = signaler;
-            }
-
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            _connection?.Dispose();
+            _dispose();
         }
 
         public enum StrokePacketType
