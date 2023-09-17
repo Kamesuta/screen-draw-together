@@ -65,29 +65,35 @@ namespace FirebaseWebRtcSignaling
                 var firebaseClient = new FirebaseClient(FirebaseConfig);
 
                 // メッセージ受信イベントを登録
-                Logger.Info($"[-> {theirID}]: Sending connection requested.");
+                Logger.Info($"[{OurID[..8]} -> {theirID[..8]}]: Sending connection requested.");
 
                 // セッションを初期化します
-                Logger.Info($"[-> Firebase]: DELETE rooms/{theirID}/signal/{OurID}");
+                Logger.Info($"[{OurID[..8]} -> Firebase]: DELETE rooms/{theirID}/signal/{OurID}");
                 await firebaseClient.DeleteAsync($"rooms/{theirID}/signal/{OurID}").ConfigureAwait(false);
                 var unixTimestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                Logger.Info($"[-> Firebase]: PUT rooms/{theirID}/signal/{OurID}/open");
+                Logger.Info($"[{OurID[..8]} -> Firebase]: PUT rooms/{theirID}/signal/{OurID}/open");
                 await firebaseClient.SetAsync($"rooms/{theirID}/signal/{OurID}/open", unixTimestamp).ConfigureAwait(false);
 
                 // WebRTCピアを作成します
                 var pc = await CreatePeerConnection().ConfigureAwait(false);
 
+                // 接続が来た場合
+                Action<string, string> onSignal = (path, data) => Logger.Info($"[{OurID[..8]} <- Firebase]: ON_ASYNC rooms/{theirID}/signal/{OurID}/host{path}");
+
                 // シグナリングオブジェクトを作成します
                 var handle = new SignalingPeer(firebaseClient, pc, OurID, false, theirID);
-                // 終了時にFirebaseクライアントを解放
-                handle.OnDispose += firebaseClient.Dispose;
-
-                // 接続が来た場合
-                Action<string, string> onSignal = (path, data) => Logger.Info($"[<- Firebase]: ON_ASYNC rooms/{theirID}/signal/{OurID}/host{path}");
-                onSignal += handle.OnSignal;
+                // 終了時
+                handle.OnDispose += () =>
+                {
+                    // メッセージ受信イベントを解除
+                    onSignal -= handle.OnSignal;
+                    // Firebaseクライアントを解放
+                    firebaseClient.Dispose();
+                };
 
                 // シグナリングサーバーからのメッセージを受信します
-                Logger.Info($"[-> Firebase]: Starting as guest. (rooms/{theirID}/signal/{OurID}/host)");
+                Logger.Info($"[{OurID[..8]} -> Firebase]: Starting as guest. (rooms/{theirID}/signal/{OurID}/host)");
+                onSignal += handle.OnSignal;
                 await firebaseClient.OnAsync(
                     $"rooms/{theirID}/signal/{OurID}/host",
                     added: (s, args, context) => onSignal(args.Path, args.Data),
@@ -108,26 +114,16 @@ namespace FirebaseWebRtcSignaling
                 var firebaseClient = new FirebaseClient(FirebaseConfig);
 
                 // ルームを初期化します
-                Logger.Info($"[-> Firebase]: DELETE rooms/{OurID}");
+                Logger.Info($"[{OurID[..8]} -> Firebase]: DELETE rooms/{OurID}");
                 await firebaseClient.DeleteAsync($"rooms/{OurID}").ConfigureAwait(false);
                 var unixTimestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                Logger.Info($"[-> Firebase]: PUT rooms/{OurID}/open");
+                Logger.Info($"[{OurID[..8]} -> Firebase]: PUT rooms/{OurID}/open");
                 await firebaseClient.SetAsync($"rooms/{OurID}/open", unixTimestamp).ConfigureAwait(false);
 
-                // ゲスト待ち受けオブジェクトを作成
-                var host = new SignalingHost(firebaseClient, OurID);
-                // 終了時
-                host.OnDispose += async () =>
-                {
-                    // ルーム削除
-                    await firebaseClient.DeleteAsync($"rooms/{OurID}").ConfigureAwait(false);
-                    // Firebaseクライアントを解放
-                    firebaseClient.Dispose();
-                };
-
                 // 接続が来た場合
-                Action<string, string> onSignal = (path, data) => Logger.Info($"[<- Firebase]: ON_ASYNC rooms/{OurID}{path}");
-                onSignal += async (path, data) =>
+                Action<string, string> onSignal = (path, data) => Logger.Info($"[{OurID[..8]} <- Firebase]: ON_ASYNC rooms/{OurID}{path}");
+
+                async void OnHostSignal(string path, string data)
                 {
                     // /open のパスにマッチするかどうか判定
                     var matchOpen = Regex.Match(path, @"/signal/(\w+)/open");
@@ -162,7 +158,7 @@ namespace FirebaseWebRtcSignaling
                         };
 
                         // メッセージ受信イベントを登録
-                        Logger.Info($"[<- {guestID}]: Connection request received, starting signaling.");
+                        Logger.Info($"[{OurID[..8]} <- {guestID[..8]}]: Connection request received, starting signaling.");
                         onSignal += OnSignal;
                         // 終了時
                         handle.OnDispose += async () =>
@@ -178,8 +174,22 @@ namespace FirebaseWebRtcSignaling
                     }
                 };
 
+                // ゲスト待ち受けオブジェクトを作成
+                var host = new SignalingHost(firebaseClient, OurID);
+                // 終了時
+                host.OnDispose += async () =>
+                {
+                    // メッセージ受信イベントを解除
+                    onSignal -= OnHostSignal;
+                    // ルーム削除
+                    await firebaseClient.DeleteAsync($"rooms/{OurID}").ConfigureAwait(false);
+                    // Firebaseクライアントを解放
+                    firebaseClient.Dispose();
+                };
+
                 // シグナリングサーバーからのメッセージを受信します
-                Logger.Info($"[-> Firebase]: Starting as host. (rooms/{OurID})");
+                Logger.Info($"[{OurID[..8]} -> Firebase]: Starting as host. (rooms/{OurID})");
+                onSignal += OnHostSignal;
                 await firebaseClient.OnAsync(
                     $"rooms/{OurID}",
                     added: (s, args, context) => onSignal(args.Path, args.Data),
@@ -203,11 +213,6 @@ namespace FirebaseWebRtcSignaling
             public string OurID { get; }
 
             /// <summary>
-            /// このピアが属するルームの任意のID
-            /// </summary>
-            public string RoomID => OurID;
-
-            /// <summary>
             /// Firebaseクライアント
             /// </summary>
             public FirebaseClient FirebaseClient { get; set; }
@@ -223,11 +228,15 @@ namespace FirebaseWebRtcSignaling
                 // プロパティ初期化
                 FirebaseClient = firebaseClient;
                 OurID = ourID;
+
+                Logger.Info($"[{OurID[..8]}]: Signaling host initialized.");
             }
 
             // ルーム終了処理
             public void Dispose()
             {
+                Logger.Info($"[{OurID[..8]}]: Signaling host disposed.");
+
                 // 終了イベント
                 OnDispose();
 
@@ -289,11 +298,15 @@ namespace FirebaseWebRtcSignaling
                 // イベントを登録します
                 PeerConnection.onconnectionstatechange += RTCPeerConnection_onconnectionstatechange;
                 PeerConnection.onicecandidate += RTCPeerConnection_onicecandidate;
+
+                Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Signaling peer initialized.");
             }
 
             // 切断
             public void Dispose()
             {
+                Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Signaling peer disposed.");
+
                 // イベントを解除します
                 PeerConnection.onconnectionstatechange -= RTCPeerConnection_onconnectionstatechange;
                 PeerConnection.onicecandidate -= RTCPeerConnection_onicecandidate;
@@ -307,12 +320,12 @@ namespace FirebaseWebRtcSignaling
             // 接続状態が変更されたときに発生します
             private void RTCPeerConnection_onconnectionstatechange(RTCPeerConnectionState state)
             {
-                Logger.Info($"[   {TheirID}]: Connection state changed to {state}.");
+                Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Connection state changed to {state}.");
 
                 // シグナリングが完了(接続が確立された or 切断された)場合、シグナリングを終了します
                 if (!(state == RTCPeerConnectionState.@new || state == RTCPeerConnectionState.connecting))
                 {
-                    Logger.Info($"[   {TheirID}]: Exiting signaling as connection state is now {state}.");
+                    Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Exiting signaling as connection state is now {state}.");
                     // シグナリングを終了します
                     Dispose();
                 }
@@ -324,7 +337,7 @@ namespace FirebaseWebRtcSignaling
                 // ホストの候補は常にSDPオファーやアンサーに含まれているため、追加の送信は不要です
                 if (cand.type != RTCIceCandidateType.host)
                 {
-                    Logger.Info($"[-> {TheirID}]: ICE {cand.ToShortString()}.");
+                    Logger.Info($"[{OurID[..8]} -> {TheirID[..8]}]: ICE {cand.ToShortString()}.");
                     // ICEメッセージを送信します
                     await SendToSignalingServer(cand.toJSON(), WebRTCSignalTypesEnum.ice).ConfigureAwait(false);
                 }
@@ -333,7 +346,7 @@ namespace FirebaseWebRtcSignaling
             // 新しいWebRTCピア接続を作成し、シグナリングサーバーにSDPオファーを送信します
             internal async Task SendOffer()
             {
-                Logger.Info($"[-> {TheirID}]: SDP {RTCSdpType.offer}");
+                Logger.Info($"[{OurID[..8]} -> {TheirID[..8]}]: SDP {RTCSdpType.offer}");
                 // オファーを作成します
                 var offerSdp = PeerConnection.createOffer();
                 // オファーを設定します
@@ -350,13 +363,13 @@ namespace FirebaseWebRtcSignaling
                 try
                 {
                     // シグナリングサーバーにデータを送信します
-                    Logger.Info($"[-> Firebase]: PUT rooms/{RoomID}/signal/{(IsHost ? TheirID : OurID)}/{(IsHost ? "host" : "guest")}/{sendType}");
+                    Logger.Info($"[{OurID[..8]} -> Firebase]: PUT rooms/{RoomID}/signal/{(IsHost ? TheirID : OurID)}/{(IsHost ? "host" : "guest")}/{sendType}");
                     await FirebaseClient.SetAsync($"rooms/{RoomID}/signal/{(IsHost ? TheirID : OurID)}/{(IsHost ? "host" : "guest")}/{sendType}", content).ConfigureAwait(false);
                 }
                 catch (TaskCanceledException)
                 {
                     // シグナリングが完了/失敗したとき、リクエストをキャンセルする
-                    Logger.Info($"[   {TheirID}]: Canceled signaling request as signaling is done or failed.");
+                    Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Canceled signaling request as signaling is done or failed.");
                 }
             }
 
@@ -382,13 +395,13 @@ namespace FirebaseWebRtcSignaling
                 if (RTCIceCandidateInit.TryParse(signal, out var iceCandidateInit))
                 {
                     // このピアにICEメッセージを追加します
-                    Logger.Info($"[<- {TheirID}]: ICE {iceCandidateInit.candidate}");
+                    Logger.Info($"[{OurID[..8]} <- {TheirID[..8]}]: ICE {iceCandidateInit.candidate}");
                     PeerConnection.addIceCandidate(iceCandidateInit);
                 }
                 else
                 {
                     // 未知のICEメッセージ
-                    Logger.Warn($"[   {TheirID}]: Unrecognised ICE candidate message: {signal}");
+                    Logger.Warn($"[{OurID[..8]} -- {TheirID[..8]}]: Unrecognised ICE candidate message: {signal}");
                 }
             }
 
@@ -398,7 +411,7 @@ namespace FirebaseWebRtcSignaling
                 // SDPメッセージを解析します
                 if (RTCSessionDescriptionInit.TryParse(signal, out var descriptionInit))
                 {
-                    Logger.Info($"[<- {TheirID}]: SDP {descriptionInit.type}");
+                    Logger.Info($"[{OurID[..8]} <- {TheirID[..8]}]: SDP {descriptionInit.type}");
                     //Logger.Info(descriptionInit.sdp);
 
                     // リモートピアのSDPを設定します
@@ -407,13 +420,13 @@ namespace FirebaseWebRtcSignaling
                     if (result != SetDescriptionResultEnum.OK)
                     {
                         // リモートピアのSDPを設定できない場合
-                        Logger.Warn($"[   {TheirID}]: Failed to set remote description, {result}.");
+                        Logger.Warn($"[{OurID[..8]} -- {TheirID[..8]}]: Failed to set remote description, {result}.");
                         // このピアを閉じます
                         PeerConnection.Close("Failed to set remote description");
                     }
                     else if (descriptionInit.type == RTCSdpType.offer)
                     {
-                        Logger.Info($"[-> {TheirID}]: SDP {RTCSdpType.answer}");
+                        Logger.Info($"[{OurID[..8]} -> {TheirID[..8]}]: SDP {RTCSdpType.answer}");
                         // リモートピアがオファーを送信した場合
                         var answerSdp = PeerConnection.createAnswer();
                         // アンサーを設定します
@@ -425,7 +438,7 @@ namespace FirebaseWebRtcSignaling
                 else
                 {
                     // 未知のSDPメッセージ
-                    Logger.Warn($"Unrecognised SDP message: {signal}");
+                    Logger.Warn($"[{OurID[..8]} -- {TheirID[..8]}]: Unrecognised SDP message: {signal}");
                 }
             }
         }
