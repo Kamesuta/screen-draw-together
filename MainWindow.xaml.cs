@@ -32,9 +32,16 @@ namespace screen_draw_together
         private WebRTCSyncInkCanvas? webRtcSyncInkCanvasB;
         private WebRTCSyncInkCanvas? webRtcSyncInkCanvasC;
 
+        private SelectWindow? selectWindow;
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
 
         private void AlphaOverlayOpen_Click(object sender, RoutedEventArgs e)
@@ -117,9 +124,17 @@ namespace screen_draw_together
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void SelectWindowOpen_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            selectWindow?.Close();
+            selectWindow = new SelectWindow();
+            selectWindow.Show();
+        }
+
+        private void SelectWindowClose_Click(object sender, RoutedEventArgs e)
+        {
+            selectWindow?.Close();
+            selectWindow = null;
         }
     }
 }
