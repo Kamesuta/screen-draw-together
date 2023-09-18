@@ -33,6 +33,7 @@ namespace screen_draw_together
         private WebRTCSyncInkCanvas? webRtcSyncInkCanvasC;
 
         private SelectWindow? selectWindow;
+        private SelectBorder? selectBorder;
 
         public MainWindow()
         {
@@ -135,6 +136,29 @@ namespace screen_draw_together
         {
             selectWindow?.Close();
             selectWindow = null;
+        }
+
+        private void SelectBorderOpen_Click(object sender, RoutedEventArgs e)
+        {
+            selectBorder?.Close();
+            selectBorder = new SelectBorder();
+            selectBorder.Show();
+        }
+
+        private void SelectBorderClose_Click(object sender, RoutedEventArgs e)
+        {
+            selectBorder?.Close();
+            selectBorder = null;
+        }
+
+        private void SelectBorderRect1_Click(object sender, RoutedEventArgs e)
+        {
+            selectBorder?.SetRect(new Rect(100, 100, 200, 200));
+        }
+
+        private void SelectBorderRect2_Click(object sender, RoutedEventArgs e)
+        {
+            selectBorder?.SetRect(new Rect(300, 100, 200, 300));
         }
     }
 }
