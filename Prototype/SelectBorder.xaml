@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:screen_draw_together.Prototype"
         mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="True" WindowStartupLocation="CenterScreen"
-        WindowState="Normal" Background="#01ffffff" AllowsTransparency="True" WindowStyle="None"
-        Title="AlphaOverlay" Height="450" Width="800" Topmost="True">
+        WindowState="Normal" Background="#77ff0000" AllowsTransparency="True" WindowStyle="None"
+        Title="AlphaOverlay" Topmost="True" MouseDown="Window_MouseDown" Closing="Window_Closing">
     <Window.Resources>
         <local:RectConverter x:Key="RectConverter"/>
     </Window.Resources>
