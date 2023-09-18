@@ -4,9 +4,15 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:screen_draw_together.Prototype"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="SelectWindow" Height="450" Width="800">
+    <Window.Resources>
+        <system:String x:Key="captureWindowState">OFF</system:String>
+    </Window.Resources>
     <Grid>
-        
+        <Button x:Name="captureWindowButton" Content="{DynamicResource captureWindowState}" ContentStringFormat='Capture Window {0}' HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="captureWindowButton_Click"/>
+        <Label x:Name="captureWindowText" Content="Label" Margin="132,12,10,0" VerticalAlignment="Top"/>
+
     </Grid>
 </Window>
