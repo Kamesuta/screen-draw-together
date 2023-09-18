@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
@@ -112,13 +111,7 @@ namespace screen_draw_together.Prototype
             private static partial bool EnumWindows(EnumWindowsDelegate lpEnumFunc, IntPtr lparam);
 
             [LibraryImport("user32.dll")]
-            private static partial IntPtr WindowFromPoint(System.Drawing.Point p);
-
-            [LibraryImport("user32.dll")]
             private static partial long GetWindowLongA(IntPtr hWnd, int nIndex);
-
-            [LibraryImport("user32.dll")]
-            private static partial IntPtr GetAncestor(IntPtr hWnd, uint gaFlags);
 
             [LibraryImport("user32.dll")]
             private static partial IntPtr GetShellWindow();
@@ -149,66 +142,6 @@ namespace screen_draw_together.Prototype
                 public int Top { get; set; }
                 public int Right { get; set; }
                 public int Bottom { get; set; }
-            }
-
-            /// <summary>
-            /// コントロールからウィンドウのハンドルを取得
-            /// </summary>
-            /// <param name="hWnd">コントロール or ウィンドウのハンドル</param>
-            /// <returns>ウィンドウのハンドル</returns>
-            private static IntPtr GetWindowFromControl(IntPtr hWnd)
-            {
-                if ((GetWindowLongA(hWnd, GWL_STYLE) & WS_CHILD) == 0)
-                {
-                    return hWnd;
-                }
-                else
-                {
-                    return GetAncestor(hWnd, GA_ROOT);
-                }
-            }
-
-            /// <summary>
-            /// カーソルの位置にあるウィンドウの範囲を取得
-            /// </summary>
-            /// <param name="selfHWnd">自身のウィンドウハンドル</param>
-            /// <returns>ウィンドウの範囲 取得できない場合はnull</returns>
-            public static Rect? GetWindowRectOnCursor(IntPtr selfHWnd)
-            {
-                // カーソルの位置を取得
-                if (!GetCursorPos(out var p)) return null;
-
-                // デスクトップウィンドウ
-                var shellHWnd = GetShellWindow();
-                // タスクトレイウィンドウ
-                var trayHWnd = FindWindowA("Shell_TrayWnd", null);
-
-                // ウィンドウをスキャン
-                Rect? resultRect = null;
-                EnumWindows((hWnd, lparam) =>
-                {
-                    // 見えないウィンドウは無視
-                    if ((GetWindowLongA(hWnd, GWL_STYLE) & 0x10C00000) != 0x10C00000) return true;
-                    // 自身は無視
-                    if (hWnd == selfHWnd) return true;
-                    // デスクトップは無視
-                    if (hWnd == shellHWnd) return true;
-                    // タスクトレイは無視
-                    if (hWnd == trayHWnd) return true;
-
-                    // ウィンドウの範囲を取得
-                    if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT rect, Marshal.SizeOf(typeof(RECT))) != 0) return true;
-
-                    // カーソルの位置にあるウィンドウを探す
-                    if (!(rect.Left <= p.X && p.X <= rect.Right && rect.Top <= p.Y && p.Y <= rect.Bottom)) return true;
-
-                    // ウィンドウの範囲記録して終了
-                    resultRect = new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
-                    return false;
-                }, IntPtr.Zero);
-
-                // ウィンドウの範囲をRectに変換して返す
-                return resultRect;
             }
 
             /// <summary>
@@ -266,23 +199,6 @@ namespace screen_draw_together.Prototype
                 // ウィンドウの範囲をRectに変換して返す
                 return resultRects;
             }
-        }
-    }
-
-    /// <summary>
-    /// 長方形コンバーター
-    /// </summary>
-    /// <see cref="https://stackoverflow.com/a/59390743"/>
-    public class RectConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return new Rect(0, 0, (double)values[0], (double)values[1]);
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new NotImplementedException();
         }
     }
 }
