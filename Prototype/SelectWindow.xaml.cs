@@ -54,10 +54,9 @@ namespace screen_draw_together.Prototype
                     Resources["CaptureWindowState"] = "OFF";
 
                     // ウィンドウの範囲を表示
-                    if (rect != null)
+                    if (rect != Rect.Empty)
                     {
-                        var r = rect.Value;
-                        CaptureWindowText.Content = $"RECT: Left:{r.Left}, Top:{r.Top}, Right:{r.Right}, Bottom:{r.Bottom}";
+                        CaptureWindowText.Content = $"RECT: Left:{rect.Left}, Top:{rect.Top}, Right:{rect.Right}, Bottom:{rect.Bottom}";
                     }
                     else
                     {

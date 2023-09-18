@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
+using System.Windows.Interop;
 using System.Windows.Threading;
 
 namespace screen_draw_together.Prototype
@@ -18,7 +19,7 @@ namespace screen_draw_together.Prototype
         /// 範囲が選択された時
         /// 右クリックでキャンセルされた場合はnullが渡される
         /// </summary>
-        public event Action<Rect?> OnRectConfirmed = delegate { };
+        public event Action<Rect> OnRectConfirmed = delegate { };
 
         // タイマーのインスタンス
         private DispatcherTimer _timer = new()
@@ -26,8 +27,10 @@ namespace screen_draw_together.Prototype
             // インターバルを設定
             Interval = TimeSpan.FromMilliseconds(10)
         };
+        // ウィンドウ範囲リスト
+        private List<Rect> _rectList = new();
         // 現在の範囲
-        private Rect? _rect;
+        private Rect _rect;
 
         public SelectBorder()
         {
@@ -36,8 +39,12 @@ namespace screen_draw_together.Prototype
             _timer.Tick += Timer_Tick;
             // タイマーを開始
             _timer.Start();
-            // ウィンドウの大きさを全画面を覆う範囲にする
-            SetWindowSizeToOverlay();
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            // ウィンドウ範囲リストを取得
+            _rectList = WindowNativeMethods.GetWindowRectList(new WindowInteropHelper(this).Handle);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -47,36 +54,15 @@ namespace screen_draw_together.Prototype
         }
 
         /// <summary>
-        /// オーバーレイ用にウィンドウの大きさを全画面を覆う範囲にする
-        /// </summary>
-        public void SetWindowSizeToOverlay()
-        {
-            Left = SystemParameters.VirtualScreenLeft;
-            Top = SystemParameters.VirtualScreenTop;
-            Width = SystemParameters.VirtualScreenWidth;
-            Height = SystemParameters.VirtualScreenHeight;
-        }
-
-        /// <summary>
         /// 範囲の位置、大きさを変える。アニメーション付き
         /// </summary>
         /// <param name="rect">新たな範囲</param>
-        /// <see cref="https://stackoverflow.com/a/51388226"/>
         public void SetRect(Rect rect)
         {
-            // アニメーションを設定
-            var myRectAnimation = new RectAnimation
-            {
-                Duration = TimeSpan.FromSeconds(0.1),
-            };
-
-            // アニメーションを開始
-            SelectRect.BeginAnimation(RectangleGeometry.RectProperty, myRectAnimation);
-            SelectRectBorder.BeginAnimation(RectangleGeometry.RectProperty, myRectAnimation);
-
-            // 範囲を更新
-            SelectRect.Rect = rect;
-            SelectRectBorder.Rect = rect;
+            Left = rect.Left;
+            Top = rect.Top;
+            Width = rect.Width;
+            Height = rect.Height;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -89,20 +75,20 @@ namespace screen_draw_together.Prototype
             else if (e.RightButton == MouseButtonState.Pressed)
             {
                 // 右クリックでキャンセル
-                OnRectConfirmed(null);
+                OnRectConfirmed(Rect.Empty);
             }
         }
 
         private void Timer_Tick(object? sender, EventArgs e)
         {
             // カーソルの位置にあるウィンドウの範囲を取得
-            var rect = WindowNativeMethods.GetWindowRectOnCursor();
+            var rect = WindowNativeMethods.GetWindowRectFromListOnCursor(_rectList);
             // 取得できなかったら何もしない、更新されていない場合も何もしない
-            if (rect is null || rect == _rect) return;
+            if (rect == Rect.Empty || rect == _rect) return;
             _rect = rect;
 
             // 範囲を更新
-            SetRect(rect.Value);
+            SetRect(rect);
         }
 
         /// <summary>
@@ -115,9 +101,15 @@ namespace screen_draw_together.Prototype
             private const int GA_ROOT = 2;
             private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
 
+            private delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lparam);
+
             [LibraryImport("user32.dll")]
             [return: MarshalAs(UnmanagedType.Bool)]
             private static partial bool GetCursorPos(out System.Drawing.Point p);
+
+            [LibraryImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static partial bool EnumWindows(EnumWindowsDelegate lpEnumFunc, IntPtr lparam);
 
             [LibraryImport("user32.dll")]
             private static partial IntPtr WindowFromPoint(System.Drawing.Point p);
@@ -133,6 +125,10 @@ namespace screen_draw_together.Prototype
 
             [LibraryImport("user32.dll")]
             private static partial IntPtr FindWindowA([MarshalAs(UnmanagedType.LPStr)] string? lpClassName, [MarshalAs(UnmanagedType.LPStr)] string? lpWindowName);
+
+            [LibraryImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static partial bool IsWindowVisible(IntPtr hWnd);
 
             /// <summary>
             /// 引数のcbAttributeにこれを渡す
@@ -175,29 +171,100 @@ namespace screen_draw_together.Prototype
             /// <summary>
             /// カーソルの位置にあるウィンドウの範囲を取得
             /// </summary>
+            /// <param name="selfHWnd">自身のウィンドウハンドル</param>
             /// <returns>ウィンドウの範囲 取得できない場合はnull</returns>
-            public static Rect? GetWindowRectOnCursor()
+            public static Rect? GetWindowRectOnCursor(IntPtr selfHWnd)
             {
                 // カーソルの位置を取得
                 if (!GetCursorPos(out var p)) return null;
 
-                // カーソルの位置にあるコントロールのハンドルを取得
-                IntPtr hWnd = WindowFromPoint(p);
-                if (hWnd == IntPtr.Zero) return null;
+                // デスクトップウィンドウ
+                var shellHWnd = GetShellWindow();
+                // タスクトレイウィンドウ
+                var trayHWnd = FindWindowA("Shell_TrayWnd", null);
 
-                // コントロールからウィンドウのハンドルを取得
-                IntPtr hWindowWnd = GetWindowFromControl(hWnd);
+                // ウィンドウをスキャン
+                Rect? resultRect = null;
+                EnumWindows((hWnd, lparam) =>
+                {
+                    // 見えないウィンドウは無視
+                    if ((GetWindowLongA(hWnd, GWL_STYLE) & 0x10C00000) != 0x10C00000) return true;
+                    // 自身は無視
+                    if (hWnd == selfHWnd) return true;
+                    // デスクトップは無視
+                    if (hWnd == shellHWnd) return true;
+                    // タスクトレイは無視
+                    if (hWnd == trayHWnd) return true;
 
-                // デスクトップは無視
-                if (hWindowWnd == GetShellWindow()) return null;
-                // タスクトレイは無視
-                if (hWindowWnd == FindWindowA("Shell_TrayWnd", null)) return null;
+                    // ウィンドウの範囲を取得
+                    if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT rect, Marshal.SizeOf(typeof(RECT))) != 0) return true;
 
-                // ウィンドウの範囲を取得
-                if (DwmGetWindowAttribute(hWindowWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT rect, Marshal.SizeOf(typeof(RECT))) != 0) return null;
+                    // カーソルの位置にあるウィンドウを探す
+                    if (!(rect.Left <= p.X && p.X <= rect.Right && rect.Top <= p.Y && p.Y <= rect.Bottom)) return true;
+
+                    // ウィンドウの範囲記録して終了
+                    resultRect = new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+                    return false;
+                }, IntPtr.Zero);
 
                 // ウィンドウの範囲をRectに変換して返す
-                return new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+                return resultRect;
+            }
+
+            /// <summary>
+            /// カーソルの位置にあるウィンドウの範囲を取得
+            /// </summary>
+            /// <param name="rectList">ウィンドウの範囲リスト</param>
+            /// <returns>ウィンドウの範囲 取得できない場合はnull</returns>
+            public static Rect GetWindowRectFromListOnCursor(List<Rect> rectList)
+            {
+                // カーソルの位置を取得
+                if (!GetCursorPos(out var p)) return Rect.Empty;
+
+                return rectList.FirstOrDefault(
+                    // カーソルの位置にあるウィンドウを探す
+                    (rect) => rect.Left <= p.X && p.X <= rect.Right && rect.Top <= p.Y && p.Y <= rect.Bottom,
+                    Rect.Empty
+                );
+            }
+
+            /// <summary>
+            /// ウィンドウの範囲リストを取得
+            /// </summary>
+            /// <param name="selfHWnd">自身のウィンドウハンドル</param>
+            /// <returns>ウィンドウの範囲リスト</returns>
+            public static List<Rect> GetWindowRectList(IntPtr selfHWnd)
+            {
+                // デスクトップウィンドウ
+                var shellHWnd = GetShellWindow();
+                // タスクトレイウィンドウ
+                var trayHWnd = FindWindowA("Shell_TrayWnd", null);
+
+                // ウィンドウをスキャン
+                List<Rect> resultRects = new();
+                EnumWindows((hWnd, lparam) =>
+                {
+                    // 見えないウィンドウは無視
+                    if (!IsWindowVisible(hWnd)) return true;
+                    // 自身は無視
+                    if (hWnd == selfHWnd) return true;
+                    // デスクトップは無視
+                    if (hWnd == shellHWnd) return true;
+                    // タスクトレイは無視
+                    if (hWnd == trayHWnd) return true;
+
+                    // ウィンドウの範囲を取得
+                    if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT rect, Marshal.SizeOf(typeof(RECT))) != 0) return true;
+                    // 空のウィンドウは無視
+                    if (rect.Left == rect.Right || rect.Top == rect.Bottom) return true;
+
+                    // ウィンドウの範囲記録して終了
+                    resultRects.Add(new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top));
+                    return true;
+                }, IntPtr.Zero);
+
+                // ウィンドウの範囲をRectに変換して返す
+                return resultRects;
             }
         }
     }

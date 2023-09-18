@@ -4,36 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:screen_draw_together.Prototype"
-        mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="True" WindowStartupLocation="CenterScreen"
-        WindowState="Normal" Background="#77ff0000" AllowsTransparency="True" WindowStyle="None"
+        mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="True"
+        x:Name="SelectWindow" Width="640" Height="480"
+        WindowState="Normal" Background="Transparent" AllowsTransparency="True" WindowStyle="None"
         Title="AlphaOverlay" Topmost="True" MouseDown="Window_MouseDown" Closing="Window_Closing">
-    <Window.Resources>
-        <local:RectConverter x:Key="RectConverter"/>
-    </Window.Resources>
-    <Grid x:Name="MainGrid">
-        <Path Fill="#40ffffff">
-            <Path.Data>
-                <CombinedGeometry GeometryCombineMode="Exclude">
-                    <CombinedGeometry.Geometry1>
-                        <RectangleGeometry>
-                            <RectangleGeometry.Rect>
-                                <MultiBinding Converter="{StaticResource RectConverter}">
-                                    <Binding ElementName="MainGrid" Path="ActualWidth"/>
-                                    <Binding ElementName="MainGrid" Path="ActualHeight"/>
-                                </MultiBinding>
-                            </RectangleGeometry.Rect>
-                        </RectangleGeometry>
-                    </CombinedGeometry.Geometry1>
-                    <CombinedGeometry.Geometry2>
-                        <RectangleGeometry x:Name="SelectRect"/>
-                    </CombinedGeometry.Geometry2>
-                </CombinedGeometry>
-            </Path.Data>
-        </Path>
-        <Path Stroke="Red" StrokeThickness="2">
-            <Path.Data>
-                <RectangleGeometry x:Name="SelectRectBorder"/>
-            </Path.Data>
-        </Path>
+    <Grid>
+        <Rectangle Fill="#40ffffff" Stroke="Red" StrokeThickness="2"/>
     </Grid>
 </Window>
