@@ -9,7 +9,7 @@ namespace ScreenDrawTogether.Common
     /// <summary>
     /// ウィンドウの範囲を取得するクラス
     /// </summary>
-    public partial class WindowRectUtility
+    public static partial class WindowRectUtility
     {
         /// <summary>
         /// カーソルの位置にあるウィンドウの範囲を取得

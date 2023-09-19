@@ -9,6 +9,7 @@
     <Import_RootNamespace>ScreenDrawTogether.Common</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ClickThroughWindowUtility.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DrawInkCanvas.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WindowRectUtility.cs" />
   </ItemGroup>
