@@ -34,6 +34,7 @@ namespace screen_draw_together
 
         private SelectWindow? selectWindow;
         private SelectBorder? selectBorder;
+        private QRReader? qrReader;
 
         public MainWindow()
         {
@@ -159,6 +160,20 @@ namespace screen_draw_together
         private void SelectBorderRect2_Click(object sender, RoutedEventArgs e)
         {
             selectBorder?.SetRect(new Rect(300, 100, 200, 300));
+        }
+
+        private void QRReaderOpen_Click(object sender, RoutedEventArgs e)
+        {
+            qrReader?.Close();
+            qrReader = new QRReader();
+            qrReader.Show();
+
+        }
+
+        private void QRReaderClose_Click(object sender, RoutedEventArgs e)
+        {
+            qrReader?.Close();
+            qrReader = null;
         }
     }
 }

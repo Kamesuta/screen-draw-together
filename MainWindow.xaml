@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:screen_draw_together"
         mc:Ignorable="d"
-        Title="MainWindow" Height="313" Width="499" Topmost="True" Closing="Window_Closing">
+        Title="MainWindow" Height="500" Width="500" Topmost="True" Closing="Window_Closing">
     <StackPanel Orientation="Vertical" Margin="10,10,10,10">
         <GroupBox Header="AlphaOverlay" Height="47" VerticalAlignment="Top">
             <StackPanel Orientation="Horizontal">
@@ -42,6 +42,12 @@
                 <Button x:Name="SelectBorderClose" Content="Close" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderClose_Click"/>
                 <Button x:Name="SelectBorderRect1" Content="Rect1" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderRect1_Click"/>
                 <Button x:Name="SelectBorderRect2" Content="Rect2" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderRect2_Click"/>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="QRReader" Height="47" VerticalAlignment="Top">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="QRReaderOpen" Content="Open" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="QRReaderOpen_Click"/>
+                <Button x:Name="QRReaderClose" Content="Close" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="QRReaderClose_Click"/>
             </StackPanel>
         </GroupBox>
     </StackPanel>

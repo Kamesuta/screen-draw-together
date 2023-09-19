@@ -20,6 +20,8 @@
     <PackageReference Include="FirebaseAuthentication.net" Version="4.1.0" />
     <PackageReference Include="NLog" Version="5.2.4" />
     <PackageReference Include="SIPSorcery" Version="6.0.12" />
+    <PackageReference Include="ZXing.Net" Version="0.16.9" />
+    <PackageReference Include="ZXing.Net.Bindings.Windows.Compatibility" Version="0.16.12" />
   </ItemGroup>
 
   <ItemGroup>
