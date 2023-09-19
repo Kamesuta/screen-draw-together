@@ -36,12 +36,6 @@
     <ProjectReference Include="..\FireSharp\FireSharp.Core\FireSharp.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
   <Import Project="..\ScreenDrawTogether.Common\ScreenDrawTogether.Common.projitems" Label="Shared" />
 
 </Project>

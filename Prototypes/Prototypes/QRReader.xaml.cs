@@ -118,7 +118,7 @@ namespace ScreenDrawTogether.Prototype
             // Bitmapの中心にロゴを描画
             using (var graphics = Graphics.FromImage(bmp))
             {
-                var image = Assembly.GetExecutingAssembly().GetManifestResourceStream("ScreenDrawTogether.Prototype.Resources.LeftTop.png");
+                var image = Assembly.GetExecutingAssembly().GetManifestResourceStream("ScreenDrawTogether.Prototype.Resources.LeftTop.png") ?? throw new Exception("リソースが見つかりません");
                 var logo = new Bitmap(image);
                 var logoSize = new Size(bmp.Width / 5, bmp.Height / 5);
                 var logoBackSize = new Size(bmp.Width / 4, bmp.Height / 4);
