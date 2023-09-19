@@ -15,7 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace screen_draw_together
+namespace ScreenDrawTogether
 {
     using Prototype;
 

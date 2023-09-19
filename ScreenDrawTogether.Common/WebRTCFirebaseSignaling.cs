@@ -6,7 +6,7 @@ using FireSharp.Core;
 using FireSharp.Core.Config;
 using SIPSorcery.Net;
 
-namespace FirebaseWebRtcSignaling
+namespace ScreenDrawTogether.Common
 {
     /// <summary>
     /// Firebaseを使ったWebRTCシグナリングを行います

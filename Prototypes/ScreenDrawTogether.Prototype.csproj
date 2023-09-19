@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net7.0-windows</TargetFramework>
-    <RootNamespace>screen_draw_together</RootNamespace>
+    <RootNamespace>ScreenDrawTogether.Prototype</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Prototype\LeftTop.png" />
+    <None Remove="Prototypes\LeftTop.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,11 +29,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="FireSharp\FireSharp.Core\FireSharp.Core.csproj" />
+    <EmbeddedResource Include="Resources\LeftTop.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Prototype\LeftTop.png" />
+    <ProjectReference Include="..\FireSharp\FireSharp.Core\FireSharp.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,5 +41,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Import Project="..\ScreenDrawTogether.Common\ScreenDrawTogether.Common.projitems" Label="Shared" />
 
 </Project>

@@ -7,7 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
-namespace screen_draw_together.Prototype
+namespace ScreenDrawTogether.Prototype
 {
     /// <summary>
     /// SelectBorder.xaml の相互作用ロジック

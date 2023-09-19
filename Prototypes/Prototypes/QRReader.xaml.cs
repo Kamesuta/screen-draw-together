@@ -12,7 +12,7 @@ using ZXing.Windows.Compatibility;
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
 
-namespace screen_draw_together.Prototype
+namespace ScreenDrawTogether.Prototype
 {
     /// <summary>
     /// QRReader.xaml の相互作用ロジック
@@ -118,7 +118,7 @@ namespace screen_draw_together.Prototype
             // Bitmapの中心にロゴを描画
             using (var graphics = Graphics.FromImage(bmp))
             {
-                var image = Assembly.GetExecutingAssembly().GetManifestResourceStream("screen_draw_together.Prototype.LeftTop.png");
+                var image = Assembly.GetExecutingAssembly().GetManifestResourceStream("ScreenDrawTogether.Prototype.Resources.LeftTop.png");
                 var logo = new Bitmap(image);
                 var logoSize = new Size(bmp.Width / 5, bmp.Height / 5);
                 var logoBackSize = new Size(bmp.Width / 4, bmp.Height / 4);

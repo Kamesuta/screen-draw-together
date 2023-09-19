@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace screen_draw_together.Prototype
+namespace ScreenDrawTogether.Prototype
 {
     /// <summary>
     /// SelectWindow.xaml の相互作用ロジック

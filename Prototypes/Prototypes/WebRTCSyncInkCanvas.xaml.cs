@@ -1,7 +1,7 @@
 ﻿using Firebase.Auth;
 using Firebase.Auth.Repository;
-using FirebaseWebRtcSignaling;
 using FireSharp.Core.Config;
+using ScreenDrawTogether.Common;
 using SIPSorcery.Net;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Input.StylusPlugIns;
 
-namespace screen_draw_together.Prototype
+namespace ScreenDrawTogether.Prototype
 {
     /// <summary>
     /// WebRTCSyncInkCanvas.xaml の相互作用ロジック
@@ -34,9 +34,9 @@ namespace screen_draw_together.Prototype
             RoomId = roomId;
             OurIdCallback = ourIdCallback;
 
-            InkCanvas.syncPlugin.StylusDown += StylusPlugin_StylusDown;
-            InkCanvas.syncPlugin.StylusMove += StylusPlugin_StylusMove;
-            InkCanvas.syncPlugin.StylusUp += StylusPlugin_StylusUp;
+            InkCanvas.CanvasStylusDown += StylusPlugin_StylusDown;
+            InkCanvas.CanvasStylusMove += StylusPlugin_StylusMove;
+            InkCanvas.CanvasStylusUp += StylusPlugin_StylusUp;
 
             Title += $" - {(IsHost ? "Host" : "Guest")} (Preset: {PresetId})";
 

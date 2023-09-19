@@ -1,22 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Input.StylusPlugIns;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
-namespace screen_draw_together.Prototype
+namespace ScreenDrawTogether.Prototype
 {
     /// <summary>
     /// SyncInkCanvas.xaml の相互作用ロジック
@@ -27,9 +16,9 @@ namespace screen_draw_together.Prototype
         {
             InitializeComponent();
 
-            InkCanvas1.syncPlugin.StylusDown += StylusPlugin_StylusDown;
-            InkCanvas1.syncPlugin.StylusMove += StylusPlugin_StylusMove;
-            InkCanvas1.syncPlugin.StylusUp += StylusPlugin_StylusUp;
+            InkCanvas1.CanvasStylusDown += StylusPlugin_StylusDown;
+            InkCanvas1.CanvasStylusMove += StylusPlugin_StylusMove;
+            InkCanvas1.CanvasStylusUp += StylusPlugin_StylusUp;
         }
 
         private Stroke? stroke;
