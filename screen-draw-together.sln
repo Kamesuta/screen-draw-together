@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FireSharp.Core", "FireSharp
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "ScreenDrawTogether.Common", "ScreenDrawTogether.Common\ScreenDrawTogether.Common.shproj", "{0D3E48C1-92D6-4A35-8B30-516E3FF3E2A3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenDrawTogether.Core", "ScreenDrawTogether.Core\ScreenDrawTogether.Core.csproj", "{F62F8D84-51BD-49D7-9121-A52399617203}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{D170A44E-A802-476C-BF56-D40E415C14B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D170A44E-A802-476C-BF56-D40E415C14B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D170A44E-A802-476C-BF56-D40E415C14B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F62F8D84-51BD-49D7-9121-A52399617203}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F62F8D84-51BD-49D7-9121-A52399617203}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F62F8D84-51BD-49D7-9121-A52399617203}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F62F8D84-51BD-49D7-9121-A52399617203}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

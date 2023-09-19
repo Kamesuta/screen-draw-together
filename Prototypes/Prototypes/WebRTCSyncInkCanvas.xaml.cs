@@ -1,7 +1,7 @@
 ﻿using Firebase.Auth;
 using Firebase.Auth.Repository;
 using FireSharp.Core.Config;
-using ScreenDrawTogether.Common;
+using ScreenDrawTogether.Core;
 using SIPSorcery.Net;
 using System;
 using System.Collections.Generic;

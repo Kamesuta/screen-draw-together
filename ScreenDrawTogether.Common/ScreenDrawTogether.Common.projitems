@@ -10,12 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)DrawInkCanvas.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)WebRTCFirebaseSignaling.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WindowRectUtility.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>
