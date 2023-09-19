@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using ZXing;
+using ZXing.QrCode.Internal;
 using ZXing.Windows.Compatibility;
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
@@ -90,6 +92,41 @@ namespace screen_draw_together.Prototype
                 TypeText.Content = "null";
                 ContentText.Content = "null";
             }   
+        }
+
+        private void QrWriteButton_Click(object sender, RoutedEventArgs e)
+        {
+            //バーコード作成設定
+            BarcodeWriter writer = new()
+            {
+                Format = BarcodeFormat.QR_CODE,
+                Options =
+                {
+                    Width = 400,
+                    Height = 400,
+                    Margin = 2,
+                    Hints =
+                    {
+                        { EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H },
+                        { EncodeHintType.CHARACTER_SET, "UTF-8" },
+                    },
+                },
+            };
+
+            var bmp = writer.WriteAsBitmap(PrintText.Text);
+
+            // Bitmapの中心にロゴを描画
+            using (var graphics = Graphics.FromImage(bmp))
+            {
+                var image = Assembly.GetExecutingAssembly().GetManifestResourceStream("screen_draw_together.Prototype.LeftTop.png");
+                var logo = new Bitmap(image);
+                var logoSize = new Size(bmp.Width / 5, bmp.Height / 5);
+                var logoBackSize = new Size(bmp.Width / 4, bmp.Height / 4);
+                graphics.FillRectangle(Brushes.White, new Rectangle(new Point((bmp.Width - logoBackSize.Width) / 2, (bmp.Height - logoBackSize.Height) / 2), logoBackSize));
+                graphics.DrawImage(logo, new Rectangle(new Point((bmp.Width - logoSize.Width) / 2, (bmp.Height - logoSize.Height) / 2), logoSize));
+            }
+
+            PrintImage.Source = BitmapToImageSource(bmp);
         }
 
         static BitmapImage BitmapToImageSource(Bitmap bitmap)

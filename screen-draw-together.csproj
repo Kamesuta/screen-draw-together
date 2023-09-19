@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Prototype\LeftTop.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FirebaseAuthentication.net" Version="4.1.0" />
     <PackageReference Include="NLog" Version="5.2.4" />
     <PackageReference Include="SIPSorcery" Version="6.0.12" />
@@ -26,6 +30,10 @@
 
   <ItemGroup>
     <ProjectReference Include="FireSharp\FireSharp.Core\FireSharp.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Prototype\LeftTop.png" />
   </ItemGroup>
 
   <ItemGroup>
