@@ -129,7 +129,7 @@ namespace ScreenDrawTogether.Prototype
             /// <param name="hWnd">ウィンドウハンドル</param>
             /// <param name="dwAttribute">ウィンドウ属性</param>
             /// <param name="rect">範囲の出力</param>
-            /// <param name="cbAttribute">はRECTのサイズ Marshal.SizeOf(typeof(RECT)) を指定</param>
+            /// <param name="cbAttribute">はRECTのサイズ sizeof(RECT) を指定</param>
             /// <returns>戻り値が0なら成功、0以外ならエラー値</returns>
             /// <see cref="https://gogowaten.hatenablog.com/entry/2020/11/17/004505"/>
             [LibraryImport("dwmapi.dll")]
@@ -175,7 +175,7 @@ namespace ScreenDrawTogether.Prototype
 
                 // ウィンドウをスキャン
                 List<Rect> resultRects = new();
-                EnumWindows((hWnd, lparam) =>
+                unsafe bool ScanWindow(IntPtr hWnd, IntPtr lparam)
                 {
                     // 見えないウィンドウは無視
                     if (!IsWindowVisible(hWnd)) return true;
@@ -187,14 +187,15 @@ namespace ScreenDrawTogether.Prototype
                     if (hWnd == trayHWnd) return true;
 
                     // ウィンドウの範囲を取得
-                    if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT rect, Marshal.SizeOf(typeof(RECT))) != 0) return true;
+                    if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT rect, sizeof(RECT)) != 0) return true;
                     // 空のウィンドウは無視
                     if (rect.Left == rect.Right || rect.Top == rect.Bottom) return true;
 
                     // ウィンドウの範囲記録して終了
                     resultRects.Add(new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top));
                     return true;
-                }, IntPtr.Zero);
+                }
+                EnumWindows(ScanWindow, IntPtr.Zero);
 
                 // ウィンドウの範囲をRectに変換して返す
                 return resultRects;
