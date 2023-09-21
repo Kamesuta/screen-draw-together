@@ -1,12 +1,10 @@
-﻿using ScreenDrawTogether.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using ScreenDrawTogether.Common;
 
 namespace ScreenDrawTogether.Prototype
 {
@@ -22,7 +20,7 @@ namespace ScreenDrawTogether.Prototype
         public event Action<Rect> OnRectConfirmed = delegate { };
 
         // タイマーのインスタンス
-        private DispatcherTimer _timer = new()
+        private readonly DispatcherTimer _timer = new()
         {
             // インターバルを設定
             Interval = TimeSpan.FromMilliseconds(10)

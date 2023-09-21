@@ -18,9 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ScreenDrawTogether.Core\ScreenDrawTogether.Core.csproj" />
+    <ProjectReference Include="..\ScreenDrawTogether.Common\ScreenDrawTogether.Common.csproj" />
   </ItemGroup>
-
-  <Import Project="..\ScreenDrawTogether.Common\ScreenDrawTogether.Common.projitems" Label="Shared" />
 
 </Project>
