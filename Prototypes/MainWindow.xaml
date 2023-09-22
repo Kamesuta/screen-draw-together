@@ -38,10 +38,9 @@
         </GroupBox>
         <GroupBox Header="SelectBorder" Height="47" VerticalAlignment="Top">
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="SelectBorderOpen" Content="Open" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderOpen_Click"/>
+                <Button x:Name="SelectBorderOpenWindow" Content="Open Window Mode" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderOpenWindow_Click"/>
+                <Button x:Name="SelectBorderOpenMonitor" Content="Open Monitor Mode" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderOpenMonitor_Click"/>
                 <Button x:Name="SelectBorderClose" Content="Close" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderClose_Click"/>
-                <Button x:Name="SelectBorderRect1" Content="Rect1" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderRect1_Click"/>
-                <Button x:Name="SelectBorderRect2" Content="Rect2" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center" Click="SelectBorderRect2_Click"/>
             </StackPanel>
         </GroupBox>
         <GroupBox Header="QRReader" Height="47" VerticalAlignment="Top">

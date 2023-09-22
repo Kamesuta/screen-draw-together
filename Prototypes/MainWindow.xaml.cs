@@ -125,10 +125,23 @@ namespace ScreenDrawTogether
             selectWindow = null;
         }
 
-        private void SelectBorderOpen_Click(object sender, RoutedEventArgs e)
+        private void SelectBorderOpenWindow_Click(object sender, RoutedEventArgs e)
         {
             selectBorder?.Close();
-            selectBorder = new SelectBorder();
+            selectBorder = new SelectBorder()
+            {
+                Mode = SelectBorder.SelectMode.Window
+            };
+            selectBorder.Show();
+        }
+
+        private void SelectBorderOpenMonitor_Click(object sender, RoutedEventArgs e)
+        {
+            selectBorder?.Close();
+            selectBorder = new SelectBorder()
+            {
+                Mode = SelectBorder.SelectMode.Monitor
+            };
             selectBorder.Show();
         }
 
@@ -136,16 +149,6 @@ namespace ScreenDrawTogether
         {
             selectBorder?.Close();
             selectBorder = null;
-        }
-
-        private void SelectBorderRect1_Click(object sender, RoutedEventArgs e)
-        {
-            selectBorder?.SetRect(new Rect(100, 100, 200, 200));
-        }
-
-        private void SelectBorderRect2_Click(object sender, RoutedEventArgs e)
-        {
-            selectBorder?.SetRect(new Rect(300, 100, 200, 300));
         }
 
         private void QRReaderOpen_Click(object sender, RoutedEventArgs e)

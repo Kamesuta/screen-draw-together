@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using ScreenDrawTogether.Common;
+using System.Windows;
 
 namespace ScreenDrawTogether.Prototype
 {
