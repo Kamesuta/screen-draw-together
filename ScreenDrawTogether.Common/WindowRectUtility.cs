@@ -42,10 +42,11 @@ public static partial class WindowRectUtility
 
         // ウィンドウをスキャン
         List<Rect> resultRects = new();
-        unsafe bool ScanWindow(IntPtr hWnd, IntPtr lparam)
+        bool ScanWindow(IntPtr hWnd, IntPtr lparam)
         {
             // 見えないウィンドウは無視
             if (!NativeMethods.IsWindowVisible(hWnd)) return true;
+
             // 自身は無視
             if (hWnd == selfHWnd) return true;
             // デスクトップは無視
@@ -53,8 +54,13 @@ public static partial class WindowRectUtility
             // タスクトレイは無視
             if (hWnd == trayHWnd) return true;
 
+            // 隠されたアプリを無視 (UWPアプリ や Microsoft Text Input Application など)
+            // 参考: https://www.natsuneko.blog/entry/2018/08/09/enum-windows-exclude-invisible-uwp-app
+            if (NativeMethods.DwmGetWindowAttributeBool(hWnd, NativeMethods.DWMWA_CLOAKED, out bool cloaked, Marshal.SizeOf(typeof(bool))) != 0) return true;
+            if (cloaked) return true;
+
             // ウィンドウの範囲を取得
-            if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_EXTENDED_FRAME_BOUNDS, out NativeMethods.RECT rect, sizeof(NativeMethods.RECT)) != 0) return true;
+            if (NativeMethods.DwmGetWindowAttributeRect(hWnd, NativeMethods.DWMWA_EXTENDED_FRAME_BOUNDS, out NativeMethods.RECT rect, Marshal.SizeOf(typeof(NativeMethods.RECT))) != 0) return true;
             // 空のウィンドウは無視
             if (rect.Left == rect.Right || rect.Top == rect.Bottom) return true;
 
@@ -82,10 +88,8 @@ public static partial class WindowRectUtility
     /// </summary>
     private partial class NativeMethods
     {
-        public const int WS_CHILD = 0x40000000;
-        public const int GWL_STYLE = -16;
-        public const int GA_ROOT = 2;
         public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+        public const int DWMWA_CLOAKED = 14;
 
         public delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lparam);
 
@@ -110,17 +114,33 @@ public static partial class WindowRectUtility
         [return: MarshalAs(UnmanagedType.Bool)]
         public static partial bool IsWindowVisible(IntPtr hWnd);
 
+        //// デバッグ用
+        //[LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+        //public static partial int GetWindowTextW(IntPtr hWnd, Span<char> lpString, int nMaxCount);
+
         /// <summary>
-        /// 引数のcbAttributeにこれを渡す
+        /// ウィンドウの属性を取得
         /// </summary>
         /// <param name="hWnd">ウィンドウハンドル</param>
         /// <param name="dwAttribute">ウィンドウ属性</param>
         /// <param name="rect">範囲の出力</param>
-        /// <param name="cbAttribute">はRECTのサイズ sizeof(RECT) を指定</param>
+        /// <param name="cbAttribute">RECTのサイズ sizeof(RECT) を指定</param>
         /// <returns>戻り値が0なら成功、0以外ならエラー値</returns>
         /// <see cref="https://gogowaten.hatenablog.com/entry/2020/11/17/004505"/>
-        [LibraryImport("dwmapi.dll")]
-        public static partial long DwmGetWindowAttribute(IntPtr hWnd, int dwAttribute, out RECT rect, int cbAttribute);
+        [LibraryImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")]
+        public static partial long DwmGetWindowAttributeRect(IntPtr hWnd, int dwAttribute, out RECT rect, int cbAttribute);
+
+        /// <summary>
+        /// ウィンドウの属性を取得
+        /// </summary>
+        /// <param name="hWnd">ウィンドウハンドル</param>
+        /// <param name="dwAttribute">ウィンドウ属性</param>
+        /// <param name="rect">範囲の出力</param>
+        /// <param name="cbAttribute">boolのサイズ sizeof(bool) を指定</param>
+        /// <returns>戻り値が0なら成功、0以外ならエラー値</returns>
+        /// <see cref="https://www.natsuneko.blog/entry/2018/08/09/enum-windows-exclude-invisible-uwp-app"/>
+        [LibraryImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")]
+        public static partial long DwmGetWindowAttributeBool(IntPtr hWnd, int dwAttribute, [MarshalAs(UnmanagedType.Bool)] out bool boolean, int cbAttribute);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
