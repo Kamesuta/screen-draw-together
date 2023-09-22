@@ -6,7 +6,7 @@
       xmlns:local="clr-namespace:ScreenDrawTogether.Pages"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="450"
-      Title="SelectScreen">
+      Title="SelectScreen" Unloaded="Page_Unloaded">
 
     <Grid>
         <Grid Margin="20" Height="400" VerticalAlignment="Center">

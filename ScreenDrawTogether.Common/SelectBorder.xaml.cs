@@ -19,6 +19,11 @@ public partial class SelectBorder : Window
     public event Action<Rect> OnRectConfirmed = delegate { };
 
     /// <summary>
+    /// 範囲が更新された時
+    /// </summary>
+    public event Action<Rect> OnRectUpdated = delegate { };
+
+    /// <summary>
     /// 選択モード
     /// </summary>
     public enum SelectMode
@@ -102,5 +107,7 @@ public partial class SelectBorder : Window
 
         // 範囲を更新
         SetRect(rect);
+        // イベントを発火
+        OnRectUpdated(rect);
     }
 }
