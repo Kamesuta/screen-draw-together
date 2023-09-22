@@ -30,7 +30,7 @@ namespace ScreenDrawTogether.Prototype
             {
                 // ウィンドウを作成
                 _overlayWindow = new SelectBorder();
-                _overlayWindow.OnRectConfirmed += (rect) =>
+                _overlayWindow.OnRectConfirmed += (hWndRect) =>
                 {
                     // ウィンドウを閉じる
                     _overlayWindow?.Close();
@@ -39,9 +39,9 @@ namespace ScreenDrawTogether.Prototype
                     Resources["CaptureWindowState"] = "OFF";
 
                     // ウィンドウの範囲を表示
-                    if (rect != Rect.Empty)
+                    if (hWndRect.Rect != Rect.Empty)
                     {
-                        CaptureWindowText.Content = $"RECT: Left:{rect.Left}, Top:{rect.Top}, Right:{rect.Right}, Bottom:{rect.Bottom}";
+                        CaptureWindowText.Content = $"RECT: Left:{hWndRect.Rect.Left}, Top:{hWndRect.Rect.Top}, Right:{hWndRect.Rect.Right}, Bottom:{hWndRect.Rect.Bottom}";
                     }
                     else
                     {

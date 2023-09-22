@@ -1,10 +1,7 @@
 ﻿using ScreenDrawTogether.Common;
-using System;
-using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Point = System.Drawing.Point;
 
 namespace ScreenDrawTogether.Pages
 {
@@ -44,39 +41,34 @@ namespace ScreenDrawTogether.Pages
             _overlayWindow.Show();
         }
 
-        private static ImageSource GetPreview(Rect rect)
+        private static ImageSource GetPreview(HWndRect hWndRect)
         {
-            var captureBmp = new Bitmap((int)rect.Width, (int)rect.Height);
-            using (var captureGraphics = Graphics.FromImage(captureBmp))
-            {
-                captureGraphics.CopyFromScreen(new Point((int)rect.Left, (int)rect.Top), new Point(0, 0), captureBmp.Size);
-            }
-            return captureBmp.ToImageSource();
+            return WindowRectUtility.PrintWindow(hWndRect).ToImageSource();
         }
 
-        private void SelectBorder_OnRectConfirmed(Rect rect)
+        private void SelectBorder_OnRectConfirmed(HWndRect hWndRect)
         {
             _overlayWindow?.Close();
 
-            if (rect == Rect.Empty)
+            if (hWndRect.Rect == Rect.Empty)
             {
                 Preview.Source = null;
             }
             else
             {
-                Preview.Source = _confirmedPreview = GetPreview(rect);
+                Preview.Source = _confirmedPreview = GetPreview(hWndRect);
             }
         }
 
-        private void SelectBorder_OnRectUpdated(Rect rect)
+        private void SelectBorder_OnRectUpdated(HWndRect hWndRect)
         {
-            if (rect == Rect.Empty)
+            if (hWndRect.Rect == Rect.Empty)
             {
                 Preview.Source = _confirmedPreview;
             }
             else
             {
-                Preview.Source = GetPreview(rect);
+                Preview.Source = GetPreview(hWndRect);
             }
         }
 

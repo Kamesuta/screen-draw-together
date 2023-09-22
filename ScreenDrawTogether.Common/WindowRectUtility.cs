@@ -1,10 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using Point = System.Drawing.Point;
 
 namespace ScreenDrawTogether.Common;
+
+/// <summary>
+/// ウィンドウハンドルとウィンドウの範囲
+/// </summary>
+public struct HWndRect
+{
+    /// <summary>
+    /// ウィンドウハンドル
+    /// </summary>
+    public IntPtr HWnd { get; set; }
+
+    /// <summary>
+    /// ウィンドウの範囲
+    /// </summary>
+    public Rect Rect { get; set; }
+
+    /// <summary>
+    /// なし
+    /// </summary>
+    public static HWndRect Empty => new() { HWnd = IntPtr.Zero, Rect = Rect.Empty };
+}
 
 /// <summary>
 /// ウィンドウの範囲を取得するクラス
@@ -14,17 +37,17 @@ public static partial class WindowRectUtility
     /// <summary>
     /// カーソルの位置にあるウィンドウの範囲を取得
     /// </summary>
-    /// <param name="rectList">ウィンドウの範囲リスト</param>
-    /// <returns>ウィンドウの範囲 取得できない場合はnull</returns>
-    public static Rect GetWindowRectFromListOnCursor(List<Rect> rectList)
+    /// <param name="rectList">ウィンドウハンドル&範囲のリスト</param>
+    /// <returns>ウィンドウハンドル&範囲</returns>
+    public static HWndRect GetWindowRectFromListOnCursor(List<HWndRect> rectList)
     {
         // カーソルの位置を取得
-        if (!NativeMethods.GetCursorPos(out var p)) return Rect.Empty;
+        if (!NativeMethods.GetCursorPos(out var p)) return HWndRect.Empty;
 
         return rectList.FirstOrDefault(
             // カーソルの位置にあるウィンドウを探す
-            (rect) => rect.Left <= p.X && p.X <= rect.Right && rect.Top <= p.Y && p.Y <= rect.Bottom,
-            Rect.Empty
+            (hWndRect) => hWndRect.Rect.Left <= p.X && p.X <= hWndRect.Rect.Right && hWndRect.Rect.Top <= p.Y && p.Y <= hWndRect.Rect.Bottom,
+            HWndRect.Empty
         );
     }
 
@@ -32,8 +55,8 @@ public static partial class WindowRectUtility
     /// ウィンドウの範囲リストを取得
     /// </summary>
     /// <param name="selfHWnd">自身のウィンドウハンドル</param>
-    /// <returns>ウィンドウの範囲リスト</returns>
-    public static List<Rect> GetWindowRectList(IntPtr selfHWnd)
+    /// <returns>ウィンドウハンドル&範囲のリスト</returns>
+    public static List<HWndRect> GetWindowRectList(IntPtr selfHWnd)
     {
         // デスクトップウィンドウ
         var shellHWnd = NativeMethods.GetShellWindow();
@@ -41,7 +64,7 @@ public static partial class WindowRectUtility
         var trayHWnd = NativeMethods.FindWindowA("Shell_TrayWnd", null);
 
         // ウィンドウをスキャン
-        List<Rect> resultRects = new();
+        List<HWndRect> resultRects = new();
         bool ScanWindow(IntPtr hWnd, IntPtr lparam)
         {
             // 見えないウィンドウは無視
@@ -65,7 +88,7 @@ public static partial class WindowRectUtility
             if (rect.Left == rect.Right || rect.Top == rect.Bottom) return true;
 
             // ウィンドウの範囲記録して終了
-            resultRects.Add(new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top));
+            resultRects.Add(new HWndRect() { HWnd = hWnd, Rect = new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top) });
             return true;
         }
         NativeMethods.EnumWindows(ScanWindow, IntPtr.Zero);
@@ -77,10 +100,27 @@ public static partial class WindowRectUtility
     /// <summary>
     /// ディスプレイの範囲リストを取得
     /// </summary>
-    /// <returns>ディスプレイの範囲リスト</returns>
-    public static List<Rect> GetMonitorRectList()
+    /// <returns>ウィンドウハンドル&範囲のリスト</returns>
+    public static List<HWndRect> GetMonitorRectList()
     {
-        return WpfScreenHelper.Screen.AllScreens.Select((screen) => screen.Bounds).ToList();
+        return WpfScreenHelper.Screen.AllScreens.Select((screen) => new HWndRect() { HWnd = IntPtr.Zero, Rect = screen.Bounds }).ToList();
+    }
+
+    /// <summary>
+    /// ウィンドウのプレビューを取得
+    /// </summary>
+    /// <param name="hWnd"></param>
+    /// <param name="rect"></param>
+    /// <returns></returns>
+    public static Bitmap PrintWindow(HWndRect hWndRect)
+    {
+        var captureBmp = new Bitmap((int)hWndRect.Rect.Width, (int)hWndRect.Rect.Height);
+        using var captureGraphics = Graphics.FromImage(captureBmp);
+
+        // モニターをキャプチャ
+        captureGraphics.CopyFromScreen(new Point((int)hWndRect.Rect.Left, (int)hWndRect.Rect.Top), new Point(0, 0), captureBmp.Size);
+
+        return captureBmp;
     }
 
     /// <summary>
