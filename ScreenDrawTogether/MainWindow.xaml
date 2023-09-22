@@ -1,0 +1,13 @@
+﻿<Window x:Class="ScreenDrawTogether.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ScreenDrawTogether"
+        mc:Ignorable="d"
+        Title="MainWindow" Width="450" Height="600">
+    <Grid>
+        <Button Name="BackButton" Content="←" ToolTipService.ToolTip="Back" HorizontalAlignment="Left" VerticalAlignment="Top" Click="BackButton_Click" IsEnabled="{Binding CanGoBack, ElementName=Frame, Mode=OneWay}"/>
+        <Frame Name="Frame" Source="/Pages/Title.xaml" NavigationUIVisibility="Hidden"/>
+    </Grid>
+</Window>
