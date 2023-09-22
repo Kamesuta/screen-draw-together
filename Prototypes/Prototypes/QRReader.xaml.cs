@@ -1,11 +1,10 @@
-﻿using System;
+﻿using ScreenDrawTogether.Common;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
-using System.Windows.Media.Imaging;
 using ZXing;
 using ZXing.QrCode.Internal;
 using ZXing.Windows.Compatibility;
@@ -84,14 +83,14 @@ namespace ScreenDrawTogether.Prototype
                     {
                         captureGraphics.CopyFromScreen(leftTop, new Point(0, 0), captureBmp.Size);
                     }
-                    CaptureImage.Source = BitmapToImageSource(captureBmp);
+                    CaptureImage.Source = captureBmp.ToImageSource();
                 }
             }
             else
             {
                 TypeText.Content = "null";
                 ContentText.Content = "null";
-            }   
+            }
         }
 
         private void QrWriteButton_Click(object sender, RoutedEventArgs e)
@@ -126,22 +125,7 @@ namespace ScreenDrawTogether.Prototype
                 graphics.DrawImage(logo, new Rectangle(new Point((bmp.Width - logoSize.Width) / 2, (bmp.Height - logoSize.Height) / 2), logoSize));
             }
 
-            PrintImage.Source = BitmapToImageSource(bmp);
-        }
-
-        static BitmapImage BitmapToImageSource(Bitmap bitmap)
-        {
-            using MemoryStream memory = new();
-
-            bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
-            memory.Position = 0;
-            BitmapImage bitmapimage = new();
-            bitmapimage.BeginInit();
-            bitmapimage.StreamSource = memory;
-            bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapimage.EndInit();
-
-            return bitmapimage;
+            PrintImage.Source = bmp.ToImageSource();
         }
     }
 }
