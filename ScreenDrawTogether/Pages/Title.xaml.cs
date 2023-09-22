@@ -27,7 +27,7 @@ namespace ScreenDrawTogether.Pages
 
         private void HostButton_Click(object sender, RoutedEventArgs e)
         {
-            NavigationService.Navigate(new Uri("/Pages/SelectScreen.xaml", UriKind.Relative));
+            NavigationService.Navigate(new SelectScreen());
         }
 
         private void GuestButton_Click(object sender, RoutedEventArgs e)

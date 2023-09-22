@@ -12,6 +12,7 @@ namespace ScreenDrawTogether.Pages
     {
         private SelectBorder? _overlayWindow;
         private ImageSource? _confirmedPreview;
+        private HWndRect _confirmedRect = HWndRect.Empty;
 
         public SelectScreen()
         {
@@ -50,13 +51,16 @@ namespace ScreenDrawTogether.Pages
         {
             _overlayWindow?.Close();
 
+            _confirmedRect = hWndRect;
             if (hWndRect.Rect == Rect.Empty)
             {
                 Preview.Source = null;
+                StartButton.IsEnabled = false;
             }
             else
             {
                 Preview.Source = _confirmedPreview = GetPreview(hWndRect);
+                StartButton.IsEnabled = true;
             }
         }
 
@@ -75,6 +79,11 @@ namespace ScreenDrawTogether.Pages
         private void Page_Unloaded(object sender, RoutedEventArgs e)
         {
             _overlayWindow?.Close();
+        }
+
+        private void StartButton_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationService.Navigate(new Host(_confirmedRect));
         }
     }
 }

@@ -1,0 +1,27 @@
+﻿<Page x:Class="ScreenDrawTogether.Pages.Host"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ScreenDrawTogether.Pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="600" d:DesignWidth="450"
+      Title="Host">
+
+    <Grid>
+        <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+            <Label Content="共有中" FontSize="36" HorizontalAlignment="Center"/>
+            <Grid Height="300" Margin="46,0,46,0">
+                <StackPanel VerticalAlignment="Center">
+                    <Label Content="画面共有の場合: QRコードを含む画面をDiscordなどで画面共有してください" HorizontalAlignment="Left"/>
+                    <Label Content="アプリ共有の場合: まずQRコードウィンドウをDiscordなどで画面共有し、" HorizontalAlignment="Left"/>
+                    <Label Content="　　　参加してもらった後に画面共有したいアプリを共有してください" HorizontalAlignment="Left"/>
+                    <Separator Opacity="0" Height="20"/>
+                    <Button x:Name="HostButton" Content="招待を停止する" Height="60" Click="HostButton_Click"/>
+                    <Separator Opacity="0" Height="20"/>
+                    <CheckBox x:Name="ContinueInviteCheckbox" Content="続けて招待する"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</Page>
