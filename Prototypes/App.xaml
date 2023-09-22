@@ -1,8 +1,7 @@
 ﻿<Application x:Class="ScreenDrawTogether.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ScreenDrawTogether"
-             StartupUri="MainWindow.xaml">
+             StartupUri="DebugWindow.xaml">
     <Application.Resources>
          
     </Application.Resources>

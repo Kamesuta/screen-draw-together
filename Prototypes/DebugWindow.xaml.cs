@@ -1,14 +1,12 @@
 ﻿using System.Windows;
 using ScreenDrawTogether.Common;
 
-namespace ScreenDrawTogether
+namespace ScreenDrawTogether.Prototype
 {
-    using Prototype;
-
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class DebugWindow : Window
     {
         private AlphaOverlay? alphaOverlay;
 
@@ -22,7 +20,7 @@ namespace ScreenDrawTogether
         private SelectBorder? selectBorder;
         private QRReader? qrReader;
 
-        public MainWindow()
+        public DebugWindow()
         {
             InitializeComponent();
         }
