@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System.Threading.Tasks;
+using System.Windows;
 using ScreenDrawTogether.Common;
+using ScreenDrawTogether.Core;
 
 namespace ScreenDrawTogether.Prototype
 {
@@ -71,36 +73,40 @@ namespace ScreenDrawTogether.Prototype
             syncInkCanvas?.Sync();
         }
 
-        private void WebRTCSyncInkCanvasA_Click(object sender, RoutedEventArgs e)
+        private async void WebRTCSyncInkCanvasA_Click(object sender, RoutedEventArgs e)
         {
-            CreateWebRTCSyncInkCanvas("a", ref webRtcSyncInkCanvasA);
+            webRtcSyncInkCanvasA = await CreateWebRTCSyncInkCanvas("a", webRtcSyncInkCanvasA);
         }
 
-        private void WebRTCSyncInkCanvasB_Click(object sender, RoutedEventArgs e)
+        private async void WebRTCSyncInkCanvasB_Click(object sender, RoutedEventArgs e)
         {
-            CreateWebRTCSyncInkCanvas("b", ref webRtcSyncInkCanvasB);
+            webRtcSyncInkCanvasB = await CreateWebRTCSyncInkCanvas("b", webRtcSyncInkCanvasB);
         }
 
-        private void WebRTCSyncInkCanvasC_Click(object sender, RoutedEventArgs e)
+        private async void WebRTCSyncInkCanvasC_Click(object sender, RoutedEventArgs e)
         {
-            CreateWebRTCSyncInkCanvas("c", ref webRtcSyncInkCanvasC);
+            webRtcSyncInkCanvasC = await CreateWebRTCSyncInkCanvas("c", webRtcSyncInkCanvasC);
         }
 
-        private void CreateWebRTCSyncInkCanvas(string presetId, ref WebRTCSyncInkCanvas? canvas)
+        private async Task<WebRTCSyncInkCanvas?> CreateWebRTCSyncInkCanvas(string presetId, WebRTCSyncInkCanvas? canvas)
         {
+            // 接続情報
+            DrawNetworkRoutingInfo routingInfo = DrawNetworkRoutingInfo.Default;
+
+            // ルームID (nullの場合はホスト)
             string? roomId = RoomIDTextBox.Text.Length == 0 ? null : RoomIDTextBox.Text;
-            bool isHost = roomId == null;
-            void onRoomIdChanged(string newRoomId)
-            {
-                if (isHost)
-                {
-                    RoomIDTextBox.Text = newRoomId;
-                }
-            }
 
             if (canvas == null)
             {
-                canvas = new WebRTCSyncInkCanvas(presetId, isHost, roomId, onRoomIdChanged);
+                // ログイン
+                DrawNetworkAuth auth = await DrawNetworkAuth.Login(routingInfo, presetId);
+                // ルームIDを表示
+                RoomIDTextBox.Text = roomId == null ? auth.ClientId : roomId;
+
+                // キャンバスを作成
+                canvas = new WebRTCSyncInkCanvas(routingInfo, auth, roomId);
+                // タイトルにプリセットIDを表示
+                canvas.Title += $" - {(roomId == null ? "Host" : "Guest")} (Preset: {presetId})";
                 canvas.Show();
             }
             else
@@ -108,6 +114,8 @@ namespace ScreenDrawTogether.Prototype
                 canvas.Close();
                 canvas = null;
             }
+
+            return canvas;
         }
 
         private void SelectWindowOpen_Click(object sender, RoutedEventArgs e)
