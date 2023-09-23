@@ -11,7 +11,7 @@ namespace ScreenDrawTogether.Core;
 /// <summary>
 /// Firebaseを使ったWebRTCシグナリングを行います
 /// </summary>
-public static class WebRTCFirebaseSignaling
+public static partial class WebRTCFirebaseSignaling
 {
     /// <summary>
     /// シグナリング用ロガー
@@ -21,7 +21,7 @@ public static class WebRTCFirebaseSignaling
     /// <summary>
     /// <see cref="SignalingPeer"/> のビルダークラス
     /// </summary>
-    public class SignalingConnector
+    public partial class SignalingConnector
     {
         /// <summary>
         /// このピアが使用する任意のID
@@ -126,7 +126,7 @@ public static class WebRTCFirebaseSignaling
             async void OnHostSignal(string path, string data)
             {
                 // /open のパスにマッチするかどうか判定
-                var matchOpen = Regex.Match(path, @"/signal/(\w+)/open");
+                var matchOpen = SignalOpenRegex().Match(path);
                 if (matchOpen.Success)
                 {
                     // パスのパラメーターを取得
@@ -142,7 +142,7 @@ public static class WebRTCFirebaseSignaling
                     void OnSignal(string path, string data)
                     {
                         // /signal のパスにマッチするかどうか判定
-                        var matchSignal = Regex.Match(path, @"/signal/(\w+)/guest/(\w+)");
+                        var matchSignal = SignalGuestRegex().Match(path);
                         if (matchSignal.Success)
                         {
                             // パスのパラメーターを取得
@@ -199,6 +199,12 @@ public static class WebRTCFirebaseSignaling
             // ゲスト待ち受けオブジェクトを返します
             return host;
         }
+
+        [GeneratedRegex("/signal/(\\w+)/open")]
+        private static partial Regex SignalOpenRegex();
+
+        [GeneratedRegex("/signal/(\\w+)/guest/(\\w+)")]
+        private static partial Regex SignalGuestRegex();
     }
 
     /// <summary>
