@@ -51,7 +51,7 @@ public class DrawNetworkAuth
     /// <param name="routingInfo">接続情報</param>
     /// <param name="presetId">デバッグ用プリセットID</param>
     /// <returns>認証情報</returns>
-    public static async Task<DrawNetworkAuth> Login(DrawNetworkRoutingInfo routingInfo, string? presetId)
+    public static async Task<DrawNetworkAuth> Login(DrawNetworkRoutingInfo routingInfo, string? presetId = null)
     {
         // FirebaseプロジェクトのAPIキーを使用してFirebase認証コンフィグを作成
         Logger.Info("Start authention with Firebase.");
