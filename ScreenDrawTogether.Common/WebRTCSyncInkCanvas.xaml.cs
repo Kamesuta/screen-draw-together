@@ -1,4 +1,5 @@
-﻿using ScreenDrawTogether.Core;
+﻿using FireSharp.Core.Exceptions;
+using ScreenDrawTogether.Core;
 using SIPSorcery.Net;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,15 @@ public partial class WebRTCSyncInkCanvas : Window
     public DrawNetworkClient? Client { get; private set; }
 
     /// <summary>
+    /// 接続時
+    /// </summary>
+    public event Action OnConnected = delegate { };
+    /// <summary>
+    /// エラー時
+    /// </summary>
+    public event Action<string> OnError = delegate { };
+
+    /// <summary>
     /// ストローク
     /// </summary>
     private Stroke? stroke;
@@ -64,6 +74,12 @@ public partial class WebRTCSyncInkCanvas : Window
         StrokeUp,
     }
 
+    /// <summary>
+    /// コンストラクタ
+    /// </summary>
+    /// <param name="routingInfo">接続情報</param>
+    /// <param name="auth">認証情報</param>
+    /// <param name="roomId">ルームID</param>
     public WebRTCSyncInkCanvas(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth, string? roomId)
     {
         InitializeComponent();
@@ -81,15 +97,45 @@ public partial class WebRTCSyncInkCanvas : Window
         Setup();
     }
 
-    async void Setup()
+    /// <summary>
+    /// セットアップ
+    /// </summary>
+    private async void Setup()
     {
-        // クライアントを作成
-        Client = RoomId == null
-            ? await DrawNetworkClient.StartAsHost(RoutingInfo, Auth)
-            : await DrawNetworkClient.StartAsGuest(RoutingInfo, Auth, RoomId);
+        try
+        {
+            // クライアントを作成
+            Client = RoomId == null
+                ? await DrawNetworkClient.StartAsHost(RoutingInfo, Auth)
+                : await DrawNetworkClient.StartAsGuest(RoutingInfo, Auth, RoomId);
 
-        // 他人の入力: メッセージ受信時のイベントを登録
-        Client.OnMessage += OnMessage;
+            // 他人の入力: メッセージ受信時のイベントを登録
+            Client.OnMessage += OnMessage;
+            // 切断時
+            Client.OnHostClosed += (state) =>
+            {
+                // UIスレッドで実行
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    OnError("通信が切断されました");
+                    Close();
+                }));
+            };
+            // 接続時
+            Client.OnConnected += () =>
+            {
+                // UIスレッドで実行
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    OnConnected();
+                }));
+            };
+        }
+        catch (FirebaseException)
+        {
+            OnError("接続に失敗しました。\nホストの共有が終了している可能性があります。");
+            Close();
+        }
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -42,14 +42,29 @@ public class DrawNetworkClient : IDisposable
     public WebRTCFirebaseSignaling.SignalingConnector? Connector { get; private set; }
 
     /// <summary>
+    /// 接続中のピア
+    /// </summary>
+    public List<RTCPeerConnection> PeerConnections { get; } = new();
+
+    /// <summary>
     /// データチャネル
     /// </summary>
     public List<RTCDataChannel> DataChannels { get; } = new();
 
     /// <summary>
-    /// 切断済みかどうか
+    /// 接続時のイベント
+    /// </summary>
+    public event Action OnConnected = delegate { };
+
+    /// <summary>
+    /// クライアントが終了したときのイベント
     /// </summary>
     public event Action OnDispose = delegate { };
+
+    /// <summary>
+    /// 切断済みかどうか
+    /// </summary>
+    public event Action<RTCPeerConnectionState> OnHostClosed = delegate { };
 
     /// <summary>
     /// メッセージを受信したときのイベント
@@ -100,6 +115,9 @@ public class DrawNetworkClient : IDisposable
         network.OnDispose += () =>
         {
             host.Dispose();
+
+            // すべてのピアを切断
+            network.PeerConnections.ForEach(peer => peer.Dispose());
         };
 
         return network;
@@ -127,6 +145,12 @@ public class DrawNetworkClient : IDisposable
         network.OnDispose += () =>
         {
             signaler.PeerConnection.Dispose();
+            signaler.Dispose();
+        };
+        // 接続時に完了
+        network.OnConnected += () =>
+        {
+            // ゲストは接続したらシグナリングを終了
             signaler.Dispose();
         };
 
@@ -182,6 +206,7 @@ public class DrawNetworkClient : IDisposable
     {
         // P2P接続を作成
         var peerConnection = new RTCPeerConnection(config);
+        PeerConnections.Add(peerConnection);
 
         // データチャネルのラベル
         var dataChannelLabel = "data_channel";
@@ -212,6 +237,13 @@ public class DrawNetworkClient : IDisposable
             // メッセージを受信したときのイベントを発火
             OnMessage(dc, protocol, data);
         };
+        // データチャネルが接続されたときのイベントを設定
+        chatChannel.onopen += () =>
+        {
+            Logger.Info($"Data channel '{chatChannel.label}' open.");
+            // 接続時のイベントを発火
+            OnConnected();
+        };
 
         // データチャネルの接続状態が変化したときのイベントを設定
         peerConnection.onconnectionstatechange += (state) =>
@@ -223,6 +255,12 @@ public class DrawNetworkClient : IDisposable
                 // シグナリングを終了します
                 peerConnection.Dispose();
                 DataChannels.Remove(chatChannel);
+
+                // ホストが切断したときのイベントを発火
+                if (state != RTCPeerConnectionState.closed)
+                {
+                    OnHostClosed(state);
+                }
             }
         };
 
