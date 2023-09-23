@@ -79,18 +79,6 @@ public partial class SelectBorder : Window
         _timer.Stop();
     }
 
-    /// <summary>
-    /// 範囲の位置、大きさを変える。アニメーション付き
-    /// </summary>
-    /// <param name="rect">新たな範囲</param>
-    public void SetRect(Rect rect)
-    {
-        Left = rect.Left;
-        Top = rect.Top;
-        Width = rect.Width;
-        Height = rect.Height;
-    }
-
     private void Window_MouseDown(object sender, MouseButtonEventArgs e)
     {
         if (e.LeftButton == MouseButtonState.Pressed)
@@ -114,7 +102,7 @@ public partial class SelectBorder : Window
         _rect = rect;
 
         // 範囲を更新
-        SetRect(rect.Rect);
+        this.SetRect(rect.Rect);
         // イベントを発火
         OnRectUpdated(rect);
     }

@@ -35,6 +35,19 @@ public struct HWndRect
 public static partial class WindowRectUtility
 {
     /// <summary>
+    /// 範囲の位置、大きさを変える
+    /// </summary>
+    /// <param name="window">ウィンドウ</param>
+    /// <param name="rect">新たな範囲</param>
+    public static void SetRect(this Window window, Rect rect)
+    {
+        window.Left = rect.Left;
+        window.Top = rect.Top;
+        window.Width = rect.Width;
+        window.Height = rect.Height;
+    }
+
+    /// <summary>
     /// カーソルの位置にあるウィンドウの範囲を取得
     /// </summary>
     /// <param name="rectList">ウィンドウハンドル&範囲のリスト</param>
