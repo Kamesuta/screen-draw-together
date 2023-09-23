@@ -19,6 +19,15 @@
     <Compile Update="SelectBorder.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="WebRTCSyncInkCanvas.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="WebRTCSyncInkCanvas.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
 </Project>
