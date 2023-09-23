@@ -1,7 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using ScreenDrawTogether.Common;
 using ScreenDrawTogether.Core;
+using Brushes = System.Windows.Media.Brushes;
 
 namespace ScreenDrawTogether.Prototype
 {
@@ -101,10 +104,15 @@ namespace ScreenDrawTogether.Prototype
                 // ログイン
                 DrawNetworkAuth auth = await DrawNetworkAuth.Login(routingInfo, presetId);
                 // ルームIDを表示
-                RoomIDTextBox.Text = roomId == null ? auth.ClientId : roomId;
+                RoomIDTextBox.Text = roomId ?? auth.ClientId;
 
                 // キャンバスを作成
-                canvas = new WebRTCSyncInkCanvas(routingInfo, auth, roomId);
+                canvas = new WebRTCSyncInkCanvas(routingInfo, auth, roomId)
+                {
+                    Background = Brushes.White,
+                    WindowStyle = WindowStyle.SingleBorderWindow,
+                    AllowsTransparency = false,
+                };
                 // タイトルにプリセットIDを表示
                 canvas.Title += $" - {(roomId == null ? "Host" : "Guest")} (Preset: {presetId})";
                 canvas.Show();
