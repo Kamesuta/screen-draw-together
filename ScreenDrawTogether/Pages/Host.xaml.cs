@@ -5,6 +5,8 @@ using ScreenDrawTogether.Core;
 using System.Windows.Threading;
 using System;
 using System.Threading.Tasks;
+using FireSharp.Core.Exceptions;
+using Firebase.Auth;
 
 namespace ScreenDrawTogether.Pages
 {
@@ -17,6 +19,8 @@ namespace ScreenDrawTogether.Pages
         private readonly HWndRect _hWndRect;
         // キャンバス
         private WebRTCSyncInkCanvas? _syncCanvas;
+        // クライアント
+        DrawNetworkClient? _client;
         // タイマー
         private DispatcherTimer? _timer;
         // スタート時間
@@ -27,18 +31,81 @@ namespace ScreenDrawTogether.Pages
             InitializeComponent();
             _hWndRect = hWndRect;
 
-            // 自動的に招待を開始
+            // セットアップ
+            Setup();
+        }
+
+        private async void Setup()
+        {
+            // 接続情報
+            DrawNetworkRoutingInfo routingInfo = DrawNetworkRoutingInfo.Default;
+
+            DrawNetworkAuth auth;
+            try
+            {
+                // ログイン
+                auth = await DrawNetworkAuth.Login(routingInfo);
+            }
+            catch (FirebaseAuthException)
+            {
+                NotifyError("シグナリングサービスへのログインに失敗しました。");
+                return;
+            }
+
+            // ホストクライアントを作成
+            _client = new DrawNetworkClient.Host(routingInfo, auth);
+
+            // 切断時
+            _client.OnHostClosed += (state) =>
+            {
+                // UIスレッドで実行
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    NotifyError("通信が切断されました");
+                    // TODO: 切断された時メインメニューに戻す
+                    StopInvite();
+                }));
+            };
+            // 接続時
+            _client.OnConnected += () =>
+            {
+                // UIスレッドで実行
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // 連続招待が有効でない場合は停止
+                    if (ContinueInviteCheckbox.IsChecked == false)
+                    {
+                        StopInvite();
+                    }
+                }));
+            };
+
+            // ウィンドウを表示
+            _syncCanvas = new(_client);
+            _syncCanvas.ToClickThroughWindow();
+            _syncCanvas.SetRect(_hWndRect.Rect);
+            _syncCanvas.Show();
+
+            // 自動的に招待開始
             StartInvite();
         }
 
+        // 招待開始/終了ボタン
         private void HostButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_syncCanvas != null)
+            if (_client == null)
             {
+                return;
+            }
+
+            if (_client.IsSignaling)
+            {
+                // シグナリング中なら停止
                 StopInvite();
             }
             else
             {
+                // シグナリング中でなければ開始
                 StartInvite();
             }
         }
@@ -48,32 +115,21 @@ namespace ScreenDrawTogether.Pages
         /// </summary>
         private async void StartInvite()
         {
-            // 接続情報
-            DrawNetworkRoutingInfo routingInfo = DrawNetworkRoutingInfo.Default;
-            // ログイン
-            DrawNetworkAuth auth = await DrawNetworkAuth.Login(routingInfo);
-
-            // ウィンドウを表示
-            _syncCanvas = new(routingInfo, auth, null);
-            _syncCanvas.ToClickThroughWindow();
-            _syncCanvas.SetRect(_hWndRect.Rect);
-            _syncCanvas.Show();
-
-            // エラー時
-            _syncCanvas.OnError += (error) =>
+            if (_client == null)
             {
-                MessageBox.Show(error, "Screen Draw Together", MessageBoxButton.OK, MessageBoxImage.Error);
-                StopInvite();
-            };
-            // 接続時
-            _syncCanvas.OnConnected += () =>
+                return;
+            }
+
+            // シグナリング開始
+            try
             {
-                // 連続招待が有効でない場合は停止
-                if (ContinueInviteCheckbox.IsChecked == false)
-                {
-                    StopInvite();
-                }
-            };
+                await _client.StartSignaling();
+            }
+            catch (FirebaseException)
+            {
+                NotifyError("接続に失敗しました。\nホストの共有が終了している可能性があります。");
+                return;
+            }
 
             // ボタン名を変更
             HostButton.Content = "招待を停止する";
@@ -113,16 +169,32 @@ namespace ScreenDrawTogether.Pages
             // タイマーを停止
             _timer?.Stop();
             _timer = null;
-            // ウィンドウを閉じる
-            _syncCanvas?.Close();
-            _syncCanvas = null;
+            // シグナリングを停止
+            _client?.StopSignaling();
             // ボタン名を変更
             HostButton.Content = "友達を招待する";
+        }
+
+        /// <summary>
+        /// エラーを通知
+        /// </summary>
+        /// <param name="message">エラーメッセージ</param>
+        private static void NotifyError(string message)
+        {
+            MessageBox.Show(message, "Screen Draw Together", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void Page_Unloaded(object sender, RoutedEventArgs e)
         {
             StopInvite();
+
+            // ウィンドウを閉じる
+            _syncCanvas?.Close();
+            _syncCanvas = null;
+
+            // クライアントを閉じる
+            _client?.Dispose();
+            _client = null;
         }
     }
 }

@@ -9,22 +9,12 @@ namespace ScreenDrawTogether.Core;
 /// <summary>
 /// ネットワーク接続
 /// </summary>
-public class DrawNetworkClient : IDisposable
+public abstract class DrawNetworkClient : IDisposable
 {
     /// <summary>
     /// ネットワーク用ロガー
     /// </summary>
     private static readonly NLog.Logger Logger = NLog.LogManager.GetLogger("Network");
-
-    /// <summary>
-    /// ホストかどうか
-    /// </summary>
-    public bool IsHost { get; }
-
-    /// <summary>
-    /// ルームID
-    /// </summary>
-    public string RoomId { get; }
 
     /// <summary>
     /// 接続情報
@@ -39,7 +29,12 @@ public class DrawNetworkClient : IDisposable
     /// <summary>
     /// シグナリングコネクター
     /// </summary>
-    public WebRTCFirebaseSignaling.SignalingConnector? Connector { get; private set; }
+    public WebRTCFirebaseSignaling.SignalingConnector Connector { get; }
+
+    /// <summary>
+    /// シグナリング中かどうか
+    /// </summary>
+    public abstract bool IsSignaling { get; }
 
     /// <summary>
     /// 接続中のピア
@@ -76,86 +71,38 @@ public class DrawNetworkClient : IDisposable
     /// </summary>
     /// <param name="routingInfo">接続情報</param>
     /// <param name="auth">認証情報</param>
-    /// <param name="isHost">ホストかどうか</param>
-    /// <param name="roomId">ルームID</param>
-    private DrawNetworkClient(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth, bool isHost, string roomId)
+    private DrawNetworkClient(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth)
     {
         RoutingInfo = routingInfo;
         Auth = auth;
-        IsHost = isHost;
-        RoomId = roomId;
+
+        // シグナリングコネクターを作成
+        Connector = CreateSignaler();
     }
 
     // ファイナライズ
-    public void Dispose()
+    public virtual void Dispose()
     {
+        // 終了時のイベントを発火
         OnDispose();
 
         GC.SuppressFinalize(this);
     }
 
     /// <summary>
-    /// ネットワークに接続する
+    /// シグナリングを開始する
+    /// ホストの場合: ルームの待ち受けを開始
+    /// ゲストの場合: ルームに参加
     /// </summary>
-    /// <param name="routingInfo">接続情報</param>
-    /// <param name="auth">認証情報</param>
-    /// <returns>ネットワーク接続</returns>
-    public static async Task<DrawNetworkClient> StartAsHost(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth)
-    {
-        // ネットワーク
-        var network = new DrawNetworkClient(routingInfo, auth, true, auth.ClientId);
-        // シグナリングコネクターを作成
-        var connector = network.CreateSignaler();
-
-        // シグナリングを開始
-        Logger.Info($"Starting host with Client ID '{auth.ClientId}'...");
-        var host = await connector.StartAsHost();
-
-        // 終了時に完了
-        network.OnDispose += () =>
-        {
-            host.Dispose();
-
-            // すべてのピアを切断
-            network.PeerConnections.ForEach(peer => peer.Dispose());
-        };
-
-        return network;
-    }
+    public abstract Task StartSignaling();
 
     /// <summary>
-    /// ネットワークに接続する
+    /// シグナリングを停止する
+    /// 既に接続中のピアには影響しない
+    /// ホストの場合: ルームの待ち受けを停止
+    /// ゲストの場合: シグナリング中の場合は中止、既に接続中の場合はなにもしない
     /// </summary>
-    /// <param name="routingInfo">接続情報</param>
-    /// <param name="auth">認証情報</param>
-    /// <param name="roomId">ルームID</param>
-    /// <returns>ネットワーク接続</returns>
-    public static async Task<DrawNetworkClient> StartAsGuest(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth, string roomId)
-    {
-        // ネットワーク
-        var network = new DrawNetworkClient(routingInfo, auth, false, roomId);
-        // シグナリングコネクターを作成
-        var connector = network.CreateSignaler();
-
-        // シグナリングを開始
-        Logger.Info($"Starting guest with Client ID '{auth.ClientId}' and Room ID '{roomId}'...");
-        var signaler = await connector.StartAsGuest(roomId);
-
-        // 終了時に完了
-        network.OnDispose += () =>
-        {
-            signaler.PeerConnection.Dispose();
-            signaler.Dispose();
-        };
-        // 接続時に完了
-        network.OnConnected += () =>
-        {
-            // ゲストは接続したらシグナリングを終了
-            signaler.Dispose();
-        };
-
-        return network;
-    }
+    public abstract void StopSignaling();
 
     /// <summary>
     /// シグナリングコネクターを作成する
@@ -259,11 +206,162 @@ public class DrawNetworkClient : IDisposable
                 // ホストが切断したときのイベントを発火
                 if (state != RTCPeerConnectionState.closed)
                 {
+                    // TODO: 自身のDisposeを除いた切断判定が来たら
                     OnHostClosed(state);
                 }
             }
         };
 
         return peerConnection;
+    }
+
+    /// <summary>
+    /// ホストクライアント
+    /// </summary>
+    public class Host : DrawNetworkClient
+    {
+        /// <summary>
+        /// ルームの待ち受けを行うシグナリングホスト (起動中は接続数を1消費します)
+        /// </summary>
+        public WebRTCFirebaseSignaling.SignalingHost? RoomHost { get; private set; }
+
+        public override bool IsSignaling => RoomHost != null;
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="routingInfo">接続情報</param>
+        /// <param name="auth">認証情報</param>
+        public Host(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth)
+            : base(routingInfo, auth)
+        {
+        }
+
+        // ファイナライズ
+        public override void Dispose()
+        {
+            // 終了時のイベントを発火
+            base.OnDispose();
+            // シグナリングを終了
+            RoomHost?.Dispose();
+            RoomHost = null;
+
+            // すべてのピアを切断
+            PeerConnections.ForEach(peer => peer.Dispose());
+            PeerConnections.Clear();
+
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// ルームの待ち受けを開始
+        /// </summary>
+        public override async Task StartSignaling()
+        {
+            if (RoomHost != null)
+            {
+                Logger.Info($"Skipping start invite as already started.");
+                return;
+            }
+
+            // シグナリングを開始
+            Logger.Info($"Starting invite with Client ID '{Auth.ClientId}'...");
+            RoomHost = await Connector.StartAsHost();
+        }
+
+        /// <summary>
+        /// ルームの待ち受けを停止
+        /// </summary>
+        public override void StopSignaling()
+        {
+            if (RoomHost == null)
+            {
+                Logger.Info($"Skipping stop invite as already stopped.");
+                return;
+            }
+
+            // シグナリングを停止
+            Logger.Info($"Stopping invite...");
+            RoomHost?.Dispose();
+            RoomHost = null;
+        }
+    }
+
+    /// <summary>
+    /// ゲストクライアント
+    /// </summary>
+    public class Guest : DrawNetworkClient
+    {
+        /// <summary>
+        /// ルームID
+        /// </summary>
+        public string RoomId { get; }
+
+        /// <summary>
+        /// 参加用のシグナリングを行うピア
+        /// </summary>
+        public WebRTCFirebaseSignaling.SignalingPeer? Signaler { get; private set; }
+
+        public override bool IsSignaling => Signaler != null;
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="routingInfo">接続情報</param>
+        /// <param name="auth">認証情報</param>
+        /// <param name="roomId">ルームID</param>
+        public Guest(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth, string roomId)
+            : base(routingInfo, auth)
+        {
+            RoomId = roomId;
+        }
+
+        // ファイナライズ
+        public override void Dispose()
+        {
+            // 終了時のイベントを発火
+            base.OnDispose();
+
+            // 終了時にシグナリングを行っていれば終了する
+            Signaler?.Dispose();
+            Signaler = null;
+            // すべてのピアを切断
+            PeerConnections.ForEach(peer => peer.Dispose());
+            PeerConnections.Clear();
+
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// ルームに参加
+        /// </summary>
+        public override async Task StartSignaling()
+        {
+            // シグナリングを開始
+            Logger.Info($"Starting guest with Client ID '{Auth.ClientId}' and Room ID '{RoomId}'...");
+            Signaler = await Connector.StartAsGuest(RoomId);
+
+            // 接続時に完了
+            OnConnected += () =>
+            {
+                // ゲストは接続したらシグナリングを終了
+                Signaler?.Dispose();
+                Signaler = null;
+            };
+        }
+
+        /// <summary>
+        /// シグナリング中の場合は中止、既に接続中の場合はなにもしない
+        /// </summary>
+        public override void StopSignaling()
+        {
+            // シグナリングを停止
+            if (Signaler != null)
+            {
+                Logger.Info($"Canceling to join room...");
+            }
+            Signaler?.Dispose();
+            Signaler = null;
+        }
     }
 }

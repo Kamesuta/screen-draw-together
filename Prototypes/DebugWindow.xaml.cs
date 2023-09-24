@@ -1,7 +1,10 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using Firebase.Auth;
+using FireSharp.Core.Exceptions;
 using ScreenDrawTogether.Common;
 using ScreenDrawTogether.Core;
 using Brushes = System.Windows.Media.Brushes;
@@ -101,13 +104,66 @@ namespace ScreenDrawTogether.Prototype
 
             if (canvas == null)
             {
-                // ログイン
-                DrawNetworkAuth auth = await DrawNetworkAuth.Login(routingInfo, presetId);
+                DrawNetworkAuth auth;
+                try
+                {
+                    // ログイン
+                    auth = await DrawNetworkAuth.Login(routingInfo, presetId);
+                }
+                catch (FirebaseAuthException)
+                {
+                    NotifyError("接続に失敗しました。\nホストの共有が終了している可能性があります。");
+                    return null;
+                }
+
                 // ルームIDを表示
                 RoomIDTextBox.Text = roomId ?? auth.ClientId;
 
+                // クライアントを作成
+                DrawNetworkClient client = roomId == null
+                        // ホスト
+                        ? new DrawNetworkClient.Host(routingInfo, auth)
+                        // ゲスト
+                        : new DrawNetworkClient.Guest(routingInfo, auth, roomId);
+
+                // シグナリング開始
+                try
+                {
+                    await client.StartSignaling();
+                }
+                catch (FirebaseException)
+                {
+                    NotifyError("接続に失敗しました。\nホストの共有が終了している可能性があります。");
+                    return null;
+                }
+
+                // 切断時
+                client.OnHostClosed += (state) =>
+                {
+                    // UIスレッドで実行
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        NotifyError("通信が切断されました");
+                        // 切断されたらキャンバスを閉じる
+                        canvas?.Close();
+                    }));
+                };
+                // 接続時
+                client.OnConnected += () =>
+                {
+                    // UIスレッドで実行
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        // 接続したらタイトルに接続済みを表示
+                        if (canvas != null)
+                        {
+                            canvas.Title += " - Connected";
+                        }
+                    }));
+                };
+
                 // キャンバスを作成
-                canvas = new WebRTCSyncInkCanvas(routingInfo, auth, roomId)
+                canvas = new WebRTCSyncInkCanvas(client)
                 {
                     Background = Brushes.White,
                     WindowStyle = WindowStyle.SingleBorderWindow,
@@ -116,6 +172,11 @@ namespace ScreenDrawTogether.Prototype
                 // タイトルにプリセットIDを表示
                 canvas.Title += $" - {(roomId == null ? "Host" : "Guest")} (Preset: {presetId})";
                 canvas.Show();
+                // キャンバス終了時にクライアントを切断
+                canvas.Closed += (sender, e) =>
+                {
+                    client.Dispose();
+                };
             }
             else
             {
@@ -124,6 +185,15 @@ namespace ScreenDrawTogether.Prototype
             }
 
             return canvas;
+        }
+
+        /// <summary>
+        /// エラーを通知
+        /// </summary>
+        /// <param name="message">エラーメッセージ</param>
+        private static void NotifyError(string message)
+        {
+            MessageBox.Show(message, "Screen Draw Together", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void SelectWindowOpen_Click(object sender, RoutedEventArgs e)
