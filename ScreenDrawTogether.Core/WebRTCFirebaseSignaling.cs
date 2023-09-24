@@ -1,10 +1,13 @@
 using System;
+using System.Drawing.Drawing2D;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FireSharp.Core;
 using FireSharp.Core.Config;
+using FireSharp.Core.Exceptions;
 using SIPSorcery.Net;
+using ZXing;
 
 namespace ScreenDrawTogether.Core;
 
@@ -166,7 +169,15 @@ public static partial class WebRTCFirebaseSignaling
                         // メッセージ受信イベントを解除
                         onSignal -= OnSignal;
                         // セッション削除
-                        await firebaseClient.DeleteAsync($"rooms/{OurID}/signal/{guestID}").ConfigureAwait(false);
+                        try
+                        {
+                            Logger.Info($"[{OurID[..8]} -> Firebase]: DELETE rooms/{OurID}/signal/{guestID}");
+                            await firebaseClient.DeleteAsync($"rooms/{OurID}/signal/{guestID}").ConfigureAwait(false);
+                        }
+                        catch(FirebaseException)
+                        {
+                            Logger.Warn($"[{OurID[..8]}]: Failed to cleanup the session (rooms/{OurID}/signal/{guestID}).");
+                        }
                     };
 
                     // オファーを送信します
@@ -182,7 +193,15 @@ public static partial class WebRTCFirebaseSignaling
                 // メッセージ受信イベントを解除
                 onSignal -= OnHostSignal;
                 // ルーム削除
-                await firebaseClient.DeleteAsync($"rooms/{OurID}").ConfigureAwait(false);
+                try
+                {
+                    Logger.Info($"[{OurID[..8]} -> Firebase]: DELETE rooms/{OurID}");
+                    await firebaseClient.DeleteAsync($"rooms/{OurID}").ConfigureAwait(false);
+                }
+                catch(FirebaseException)
+                {
+                    Logger.Warn($"[{OurID[..8]}]: Failed to cleanup the room (rooms/{OurID}).");
+                }
                 // Firebaseクライアントを解放
                 firebaseClient.Dispose();
             };
