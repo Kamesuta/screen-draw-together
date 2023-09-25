@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using ZXing.QrCode.Internal;
-using ZXing;
-using Size = System.Drawing.Size;
-using Point = System.Drawing.Point;
-using ZXing.Windows.Compatibility;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows;
+using ZXing;
+using ZXing.QrCode.Internal;
+using ZXing.Windows.Compatibility;
+using Point = System.Drawing.Point;
+using Size = System.Drawing.Size;
+using WPoint = System.Windows.Point;
 
 namespace ScreenDrawTogether.Common;
 
@@ -21,6 +18,11 @@ namespace ScreenDrawTogether.Common;
 /// </summary>
 public class DrawQR
 {
+    /// <summary>
+    /// QRコードの種類
+    /// </summary>
+    public static readonly string TypeConstant = "screendraw";
+
     /// <summary>
     /// QRコードの位置
     /// </summary>
@@ -37,11 +39,33 @@ public class DrawQR
     /// </summary>
     private struct QRInfo
     {
-        [JsonPropertyName("pos")]
-        public QRPosition Position { get; set; }
+        /// <summary>
+        /// チェック用のQRコードの種類 (TypeConstantと同じ)
+        /// </summary>
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
 
+        /// <summary>
+        /// QRの位置
+        /// </summary>
+        [JsonPropertyName("pos")]
+        public QRPosition PositionType { get; set; }
+
+        /// <summary>
+        /// ルームID
+        /// </summary>
         [JsonPropertyName("room")]
         public string RoomId { get; set; }
+    }
+
+    /// <summary>
+    /// QRコードを読み取ったときのデータ
+    /// </summary>
+    private struct QRData
+    {
+        public string RoomId { get; set; }
+        public QRPosition PositionType { get; set; }
+        public Point Position { get; set; }
     }
 
     /// <summary>
@@ -56,12 +80,14 @@ public class DrawQR
         // QRコードに埋め込む情報を作成
         var leftTopInfo = JsonSerializer.Serialize(new QRInfo
         {
-            Position = QRPosition.LeftTop,
+            Type = TypeConstant,
+            PositionType = QRPosition.LeftTop,
             RoomId = roomId,
         });
         var rightBottomInfo = JsonSerializer.Serialize(new QRInfo
         {
-            Position = QRPosition.RightBottom,
+            Type = TypeConstant,
+            PositionType = QRPosition.RightBottom,
             RoomId = roomId,
         });
         // QRコードを作成
@@ -84,18 +110,18 @@ public class DrawQR
             // バーコードの種類をQRコードに設定
             Format = BarcodeFormat.QR_CODE,
             Options =
+            {
+                Width = 400,
+                Height = 400,
+                Margin = 2,
+                Hints =
                 {
-                    Width = 400,
-                    Height = 400,
-                    Margin = 2,
-                    Hints =
-                    {
-                        // QRコードの誤り訂正レベルを最高に設定
-                        { EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H },
-                        // QRコードの文字コードをUTF-8に設定
-                        { EncodeHintType.CHARACTER_SET, "UTF-8" },
-                    },
+                    // QRコードの誤り訂正レベルを最高に設定
+                    { EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H },
+                    // QRコードの文字コードをUTF-8に設定
+                    { EncodeHintType.CHARACTER_SET, "UTF-8" },
                 },
+            },
         };
 
         // QRコードを作成
@@ -111,5 +137,124 @@ public class DrawQR
         }
 
         return bmp;
+    }
+
+    /// <summary>
+    /// スクリーンショットからルームIDと矩形を読み取る
+    /// </summary>
+    /// <param name="rect">矩形</param>
+    /// <param name="roomId">ルームID</param>
+    /// <returns>成功したか</returns>
+    public static bool TryReadShareRoomQR(out Rect rect, out string roomId)
+    {
+        // 初期化
+        rect = Rect.Empty;
+        roomId = "";
+
+        int width = (int)SystemParameters.VirtualScreenWidth;
+        int height = (int)SystemParameters.VirtualScreenHeight;
+
+        // スクリーンキャプチャ
+        var bmp = new Bitmap(width, height);
+        using (var graphics = Graphics.FromImage(bmp))
+        {
+            graphics.CopyFromScreen((int)SystemParameters.VirtualScreenLeft, (int)SystemParameters.VirtualScreenTop, 0, 0, bmp.Size);
+        }
+        //bmp.Save("screenshot.png");
+
+        //バーコードの読み取り設定
+        BarcodeReader reader = new()
+        {
+            Options =
+            {
+                PossibleFormats = new List<BarcodeFormat>() { BarcodeFormat.QR_CODE },
+                TryHarder = true,
+            },
+        };
+
+        // スクリーンショットからQRコードを検出する
+        var results = reader.DecodeMultiple(bmp);
+        // なにも見つからない場合nullを返してくるので注意
+        // QRコードは左上と右下の2つが検出されるはず
+        if (results == null || results.Length < 2)
+        {
+            // 検出なし
+            return false;
+        }
+
+        // すべてのQRコードをチェック
+        List<QRData> qrList = new();
+        foreach (var result in results)
+        {
+            // QRコードの情報を取得
+            QRInfo qrInfo;
+            try
+            {
+                qrInfo = JsonSerializer.Deserialize<QRInfo>(result.Text);
+            }
+            catch (JsonException)
+            {
+                continue;
+            }
+            // QRコードの種類が違う
+            if (qrInfo.Type != TypeConstant) continue;
+            // ルームIDが空 または QRコードの位置が空
+            if (qrInfo.RoomId.Length == 0 || result.ResultPoints.Length == 0) continue;
+
+            // QRコードの位置を計算
+            Point? position = qrInfo.PositionType switch
+            {
+                QRPosition.LeftTop => new Point((int)result.ResultPoints.Min(p => p.X), (int)result.ResultPoints.Min(p => p.Y)),
+                QRPosition.RightBottom => new Point((int)result.ResultPoints.Max(p => p.X), (int)result.ResultPoints.Max(p => p.Y)),
+                _ => null,
+            };
+            if (position == null) continue;
+
+            // QRコードの情報をリストに追加
+            var qr = new QRData()
+            {
+                RoomId = qrInfo.RoomId,
+                PositionType = qrInfo.PositionType,
+                Position = position.Value,
+            };
+            qrList.Add(qr);
+        }
+
+        // QRコードのペアを探す
+        foreach (var qr in qrList)
+        {
+            // ペアが見つかった
+            var qrPair = qrList
+                .Where(q => q.RoomId == qr.RoomId && q.PositionType != qr.PositionType)
+                .Cast<QRData?>()
+                .FirstOrDefault();
+            if (qrPair != null)
+            {
+                // ルームIDを返す
+                roomId = qr.RoomId;
+                // 位置を取得
+                Point leftTop, rightBottom;
+                if (qr.PositionType == QRPosition.LeftTop)
+                {
+                    leftTop = qr.Position;
+                    rightBottom = qrPair.Value.Position;
+                }
+                else
+                {
+                    leftTop = qrPair.Value.Position;
+                    rightBottom = qr.Position;
+                }
+                // 矩形を返す
+                double margin = 16;
+                rect = new Rect(
+                    new WPoint(SystemParameters.VirtualScreenLeft + leftTop.X - margin, SystemParameters.VirtualScreenTop + leftTop.Y - margin),
+                    new WPoint(SystemParameters.VirtualScreenLeft + rightBottom.X + margin, SystemParameters.VirtualScreenTop + rightBottom.Y + margin)
+                );
+                return true;
+            }
+        }
+
+        // ペアが見つからなかった
+        return false;
     }
 }

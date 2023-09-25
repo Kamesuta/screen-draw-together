@@ -13,7 +13,6 @@
         <GroupBox Grid.Column="0" Header="QR Reader" Margin="10">
             <Grid>
                 <Button x:Name="QrReadButton" Content="QR Read" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="QrReadButton_Click"/>
-                <Label x:Name="TypeText" Content="Label" Margin="10,35,10,0" VerticalAlignment="Top"/>
                 <Label x:Name="ContentText" Content="Label" Margin="10,66,10,0" VerticalAlignment="Top"/>
                 <Border Margin="10,97,10,10" BorderBrush="Black" BorderThickness="1">
                     <Image x:Name="CaptureImage"/>
