@@ -21,6 +21,6 @@ public partial class Title : Page
 
     private void GuestButton_Click(object sender, RoutedEventArgs e)
     {
-
+        NavigationService.Navigate(new Guest());
     }
 }

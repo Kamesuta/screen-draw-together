@@ -6,11 +6,11 @@
         xmlns:local="clr-namespace:ScreenDrawTogether.Common"
         mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="True"
         Width="640" Height="480"
-        WindowState="Normal" Background="Transparent" AllowsTransparency="True" WindowStyle="None"
+        WindowState="Normal" Background="#01ffffff" AllowsTransparency="True" WindowStyle="None"
         Title="Canvas - Screen Draw Together" Topmost="True" Closing="Window_Closing">
     <Grid>
-        <Image x:Name="QRLeftTop" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="100"/>
-        <Image x:Name="QRRightBottom" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="100" Height="100"/>
+        <Image x:Name="QRLeftTop" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150" Height="150"/>
+        <Image x:Name="QRRightBottom" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="150" Height="150"/>
         <local:DrawInkCanvas x:Name="InkCanvas" Background="{x:Null}" MoveEnabled="False" ResizeEnabled="False" Cursor="Pen" Grid.Column="0" EditingModeInverted="EraseByPoint">
             <InkCanvas.DefaultDrawingAttributes>
                 <DrawingAttributes Color="#FFFF5656" FitToCurve="True" Height="5" IgnorePressure="False" IsHighlighter="False" StylusTip="Ellipse" StylusTipTransform="Identity" Width="5"/>

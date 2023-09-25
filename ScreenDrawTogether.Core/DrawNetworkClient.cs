@@ -295,7 +295,7 @@ public abstract class DrawNetworkClient : IDisposable
         /// <summary>
         /// ルームID
         /// </summary>
-        public string RoomId { get; }
+        public string? RoomId { get; set; }
 
         /// <summary>
         /// 参加用のシグナリングを行うピア
@@ -309,11 +309,9 @@ public abstract class DrawNetworkClient : IDisposable
         /// </summary>
         /// <param name="routingInfo">接続情報</param>
         /// <param name="auth">認証情報</param>
-        /// <param name="roomId">ルームID</param>
-        public Guest(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth, string roomId)
+        public Guest(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth)
             : base(routingInfo, auth)
         {
-            RoomId = roomId;
         }
 
         // ファイナライズ
@@ -337,6 +335,12 @@ public abstract class DrawNetworkClient : IDisposable
         /// </summary>
         public override async Task StartSignaling()
         {
+            if (RoomId == null)
+            {
+                Logger.Info($"Skipping start joining as room ID is not set.");
+                return;
+            }
+
             // シグナリングを開始
             Logger.Info($"Starting guest with Client ID '{Auth.ClientId}' and Room ID '{RoomId}'...");
             Signaler = await Connector.StartAsGuest(RoomId);
