@@ -80,6 +80,27 @@ public partial class DrawSyncInkCanvas : Window
     }
 
     /// <summary>
+    /// 招待用のQRコードを表示
+    /// </summary>
+    /// <param name="roomId">ルームID</param>
+    public void SetInviteRoomId(string? roomId)
+    {
+        if (roomId != null)
+        {
+            // QR生成
+            (var leftTop, var rightBottom) = DrawQR.CreateShareRoomQR(roomId);
+            // QRコードを表示
+            QRLeftTop.Source = leftTop.ToImageSource();
+            QRRightBottom.Source = rightBottom.ToImageSource();
+        }
+        else
+        {
+            QRLeftTop.Source = null;
+            QRRightBottom.Source = null;
+        }
+    }
+
+    /// <summary>
     /// 自分の入力: ストローク開始時
     /// </summary>
     /// <param name="e">入力</param>

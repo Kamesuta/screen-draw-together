@@ -131,6 +131,9 @@ namespace ScreenDrawTogether.Pages
                 return;
             }
 
+            // QRコードを表示
+            _syncCanvas?.SetInviteRoomId(_client.Auth.ClientId);
+
             // ボタン名を変更
             HostButton.Content = "招待を停止する";
 
@@ -166,11 +169,16 @@ namespace ScreenDrawTogether.Pages
         /// </summary>
         private void StopInvite()
         {
+            // QRコードを非表示
+            _syncCanvas?.SetInviteRoomId(null);
+
             // タイマーを停止
             _timer?.Stop();
             _timer = null;
+
             // シグナリングを停止
             _client?.StopSignaling();
+
             // ボタン名を変更
             HostButton.Content = "友達を招待する";
         }
