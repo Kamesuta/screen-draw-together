@@ -30,10 +30,10 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
-    <Compile Update="SelectBorder.xaml.cs">
+    <Compile Update="DrawSelectBorder.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WebRTCSyncInkCanvas.xaml.cs">
+    <Compile Update="DrawSyncInkCanvas.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -46,7 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="WebRTCSyncInkCanvas.xaml">
+    <Page Update="DrawSyncInkCanvas.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

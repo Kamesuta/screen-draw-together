@@ -9,7 +9,7 @@ namespace ScreenDrawTogether.Prototype
     public partial class SelectWindow : Window
     {
         // オーバーレイ
-        private SelectBorder? _overlayWindow;
+        private DrawSelectBorder? _overlayWindow;
 
         public SelectWindow()
         {
@@ -29,7 +29,7 @@ namespace ScreenDrawTogether.Prototype
             else
             {
                 // ウィンドウを作成
-                _overlayWindow = new SelectBorder();
+                _overlayWindow = new DrawSelectBorder();
                 _overlayWindow.OnRectConfirmed += (hWndRect) =>
                 {
                     // ウィンドウを閉じる

@@ -20,12 +20,12 @@ namespace ScreenDrawTogether.Prototype
 
         private SyncInkCanvas? syncInkCanvas;
 
-        private WebRTCSyncInkCanvas? webRtcSyncInkCanvasA;
-        private WebRTCSyncInkCanvas? webRtcSyncInkCanvasB;
-        private WebRTCSyncInkCanvas? webRtcSyncInkCanvasC;
+        private DrawSyncInkCanvas? webRtcSyncInkCanvasA;
+        private DrawSyncInkCanvas? webRtcSyncInkCanvasB;
+        private DrawSyncInkCanvas? webRtcSyncInkCanvasC;
 
         private SelectWindow? selectWindow;
-        private SelectBorder? selectBorder;
+        private DrawSelectBorder? selectBorder;
         private QRReader? qrReader;
 
         public DebugWindow()
@@ -94,7 +94,7 @@ namespace ScreenDrawTogether.Prototype
             webRtcSyncInkCanvasC = await CreateWebRTCSyncInkCanvas("c", webRtcSyncInkCanvasC);
         }
 
-        private async Task<WebRTCSyncInkCanvas?> CreateWebRTCSyncInkCanvas(string presetId, WebRTCSyncInkCanvas? canvas)
+        private async Task<DrawSyncInkCanvas?> CreateWebRTCSyncInkCanvas(string presetId, DrawSyncInkCanvas? canvas)
         {
             // 接続情報
             DrawNetworkRoutingInfo routingInfo = DrawNetworkRoutingInfo.Default;
@@ -163,7 +163,7 @@ namespace ScreenDrawTogether.Prototype
                 };
 
                 // キャンバスを作成
-                canvas = new WebRTCSyncInkCanvas(client)
+                canvas = new DrawSyncInkCanvas(client)
                 {
                     Background = Brushes.White,
                     WindowStyle = WindowStyle.SingleBorderWindow,
@@ -212,9 +212,9 @@ namespace ScreenDrawTogether.Prototype
         private void SelectBorderOpenWindow_Click(object sender, RoutedEventArgs e)
         {
             selectBorder?.Close();
-            selectBorder = new SelectBorder()
+            selectBorder = new DrawSelectBorder()
             {
-                Mode = SelectBorder.SelectMode.Window
+                Mode = DrawSelectBorder.SelectMode.Window
             };
             selectBorder.Show();
         }
@@ -222,9 +222,9 @@ namespace ScreenDrawTogether.Prototype
         private void SelectBorderOpenMonitor_Click(object sender, RoutedEventArgs e)
         {
             selectBorder?.Close();
-            selectBorder = new SelectBorder()
+            selectBorder = new DrawSelectBorder()
             {
-                Mode = SelectBorder.SelectMode.Monitor
+                Mode = DrawSelectBorder.SelectMode.Monitor
             };
             selectBorder.Show();
         }

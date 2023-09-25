@@ -18,7 +18,7 @@ namespace ScreenDrawTogether.Pages
         // 範囲
         private readonly HWndRect _hWndRect;
         // キャンバス
-        private WebRTCSyncInkCanvas? _syncCanvas;
+        private DrawSyncInkCanvas? _syncCanvas;
         // クライアント
         DrawNetworkClient? _client;
         // タイマー

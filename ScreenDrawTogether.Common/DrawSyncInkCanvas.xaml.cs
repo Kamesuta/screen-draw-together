@@ -11,9 +11,9 @@ using System.Windows.Input.StylusPlugIns;
 namespace ScreenDrawTogether.Common;
 
 /// <summary>
-/// WebRTCSyncInkCanvas.xaml の相互作用ロジック
+/// DrawSyncInkCanvas.xaml の相互作用ロジック
 /// </summary>
-public partial class WebRTCSyncInkCanvas : Window
+public partial class DrawSyncInkCanvas : Window
 {
     /// <summary>
     /// クライアント
@@ -58,7 +58,7 @@ public partial class WebRTCSyncInkCanvas : Window
     /// <param name="routingInfo">接続情報</param>
     /// <param name="auth">認証情報</param>
     /// <param name="roomId">ルームID</param>
-    public WebRTCSyncInkCanvas(DrawNetworkClient client)
+    public DrawSyncInkCanvas(DrawNetworkClient client)
     {
         InitializeComponent();
 

@@ -10,7 +10,7 @@ namespace ScreenDrawTogether.Pages
     /// </summary>
     public partial class SelectScreen : Page
     {
-        private SelectBorder? _overlayWindow;
+        private DrawSelectBorder? _overlayWindow;
         private ImageSource? _confirmedPreview;
         private HWndRect _confirmedRect = HWndRect.Empty;
 
@@ -22,9 +22,9 @@ namespace ScreenDrawTogether.Pages
         private void SelectMonitorButton_Click(object sender, RoutedEventArgs e)
         {
             _overlayWindow?.Close();
-            _overlayWindow = new SelectBorder()
+            _overlayWindow = new DrawSelectBorder()
             {
-                Mode = SelectBorder.SelectMode.Monitor,
+                Mode = DrawSelectBorder.SelectMode.Monitor,
             };
             _overlayWindow.OnRectConfirmed += SelectBorder_OnRectConfirmed;
             _overlayWindow.Show();
@@ -33,9 +33,9 @@ namespace ScreenDrawTogether.Pages
         private void SelectWindowButton_Click(object sender, RoutedEventArgs e)
         {
             _overlayWindow?.Close();
-            _overlayWindow = new SelectBorder()
+            _overlayWindow = new DrawSelectBorder()
             {
-                Mode = SelectBorder.SelectMode.Window,
+                Mode = DrawSelectBorder.SelectMode.Window,
             };
             _overlayWindow.OnRectConfirmed += SelectBorder_OnRectConfirmed;
             _overlayWindow.OnRectUpdated += SelectBorder_OnRectUpdated;

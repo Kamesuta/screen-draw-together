@@ -9,9 +9,9 @@ using static ScreenDrawTogether.Common.WindowRectUtility;
 namespace ScreenDrawTogether.Common;
 
 /// <summary>
-/// SelectBorder.xaml の相互作用ロジック
+/// DrawSelectBorder.xaml の相互作用ロジック
 /// </summary>
-public partial class SelectBorder : Window
+public partial class DrawSelectBorder : Window
 {
     /// <summary>
     /// 範囲が選択された時
@@ -56,7 +56,7 @@ public partial class SelectBorder : Window
     // 現在の範囲
     private HWndRect _rect;
 
-    public SelectBorder()
+    public DrawSelectBorder()
     {
         InitializeComponent();
         // タイマーメソッドを設定
