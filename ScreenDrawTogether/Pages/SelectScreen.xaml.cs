@@ -3,87 +3,86 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace ScreenDrawTogether.Pages
+namespace ScreenDrawTogether.Pages;
+
+/// <summary>
+/// SelectScreen.xaml の相互作用ロジック
+/// </summary>
+public partial class SelectScreen : Page
 {
-    /// <summary>
-    /// SelectScreen.xaml の相互作用ロジック
-    /// </summary>
-    public partial class SelectScreen : Page
+    private DrawSelectBorder? _overlayWindow;
+    private ImageSource? _confirmedPreview;
+    private HWndRect _confirmedRect = HWndRect.Empty;
+
+    public SelectScreen()
     {
-        private DrawSelectBorder? _overlayWindow;
-        private ImageSource? _confirmedPreview;
-        private HWndRect _confirmedRect = HWndRect.Empty;
+        InitializeComponent();
+    }
 
-        public SelectScreen()
+    private void SelectMonitorButton_Click(object sender, RoutedEventArgs e)
+    {
+        _overlayWindow?.Close();
+        _overlayWindow = new DrawSelectBorder()
         {
-            InitializeComponent();
-        }
+            Mode = DrawSelectBorder.SelectMode.Monitor,
+        };
+        _overlayWindow.OnRectConfirmed += SelectBorder_OnRectConfirmed;
+        _overlayWindow.Show();
+    }
 
-        private void SelectMonitorButton_Click(object sender, RoutedEventArgs e)
+    private void SelectWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        _overlayWindow?.Close();
+        _overlayWindow = new DrawSelectBorder()
         {
-            _overlayWindow?.Close();
-            _overlayWindow = new DrawSelectBorder()
-            {
-                Mode = DrawSelectBorder.SelectMode.Monitor,
-            };
-            _overlayWindow.OnRectConfirmed += SelectBorder_OnRectConfirmed;
-            _overlayWindow.Show();
-        }
+            Mode = DrawSelectBorder.SelectMode.Window,
+        };
+        _overlayWindow.OnRectConfirmed += SelectBorder_OnRectConfirmed;
+        _overlayWindow.OnRectUpdated += SelectBorder_OnRectUpdated;
+        _overlayWindow.Show();
+    }
 
-        private void SelectWindowButton_Click(object sender, RoutedEventArgs e)
+    private static ImageSource GetPreview(HWndRect hWndRect)
+    {
+        return WindowRectUtility.PrintWindow(hWndRect).ToImageSource();
+    }
+
+    private void SelectBorder_OnRectConfirmed(HWndRect hWndRect)
+    {
+        _overlayWindow?.Close();
+
+        _confirmedRect = hWndRect;
+        if (hWndRect.Rect == Rect.Empty)
         {
-            _overlayWindow?.Close();
-            _overlayWindow = new DrawSelectBorder()
-            {
-                Mode = DrawSelectBorder.SelectMode.Window,
-            };
-            _overlayWindow.OnRectConfirmed += SelectBorder_OnRectConfirmed;
-            _overlayWindow.OnRectUpdated += SelectBorder_OnRectUpdated;
-            _overlayWindow.Show();
+            Preview.Source = null;
+            StartButton.IsEnabled = false;
         }
-
-        private static ImageSource GetPreview(HWndRect hWndRect)
+        else
         {
-            return WindowRectUtility.PrintWindow(hWndRect).ToImageSource();
+            Preview.Source = _confirmedPreview = GetPreview(hWndRect);
+            StartButton.IsEnabled = true;
         }
+    }
 
-        private void SelectBorder_OnRectConfirmed(HWndRect hWndRect)
+    private void SelectBorder_OnRectUpdated(HWndRect hWndRect)
+    {
+        if (hWndRect.Rect == Rect.Empty)
         {
-            _overlayWindow?.Close();
-
-            _confirmedRect = hWndRect;
-            if (hWndRect.Rect == Rect.Empty)
-            {
-                Preview.Source = null;
-                StartButton.IsEnabled = false;
-            }
-            else
-            {
-                Preview.Source = _confirmedPreview = GetPreview(hWndRect);
-                StartButton.IsEnabled = true;
-            }
+            Preview.Source = _confirmedPreview;
         }
-
-        private void SelectBorder_OnRectUpdated(HWndRect hWndRect)
+        else
         {
-            if (hWndRect.Rect == Rect.Empty)
-            {
-                Preview.Source = _confirmedPreview;
-            }
-            else
-            {
-                Preview.Source = GetPreview(hWndRect);
-            }
+            Preview.Source = GetPreview(hWndRect);
         }
+    }
 
-        private void Page_Unloaded(object sender, RoutedEventArgs e)
-        {
-            _overlayWindow?.Close();
-        }
+    private void Page_Unloaded(object sender, RoutedEventArgs e)
+    {
+        _overlayWindow?.Close();
+    }
 
-        private void StartButton_Click(object sender, RoutedEventArgs e)
-        {
-            NavigationService.Navigate(new Host(_confirmedRect));
-        }
+    private void StartButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService.Navigate(new Host(_confirmedRect));
     }
 }
