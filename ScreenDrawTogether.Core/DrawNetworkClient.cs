@@ -343,6 +343,7 @@ public abstract class DrawNetworkClient : IDisposable
 
             // シグナリングを開始
             Logger.Info($"Starting guest with Client ID '{Auth.ClientId}' and Room ID '{RoomId}'...");
+            Signaler?.Dispose();
             Signaler = await Connector.StartAsGuest(RoomId);
 
             // 接続時に完了

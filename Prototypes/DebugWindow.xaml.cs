@@ -124,7 +124,7 @@ namespace ScreenDrawTogether.Prototype
                         // ホスト
                         ? new DrawNetworkClient.Host(routingInfo, auth)
                         // ゲスト
-                        : new DrawNetworkClient.Guest(routingInfo, auth, roomId);
+                        : new DrawNetworkClient.Guest(routingInfo, auth) { RoomId = roomId };
 
                 // シグナリング開始
                 try
