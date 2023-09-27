@@ -396,6 +396,12 @@ public static partial class WebRTCFirebaseSignaling
                 // シグナリングが完了/失敗したとき、リクエストをキャンセルする
                 Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Canceled signaling request as signaling is done or failed.");
             }
+            catch (FirebaseException)
+            {
+                // ルームが削除された、または権限エラーの場合、リクエストをキャンセルする
+                // 例えば、1人目が接続して自動的に部屋が終了した場合、2人目は部屋が存在しないためエラーになる
+                Logger.Info($"[{OurID[..8]} -- {TheirID[..8]}]: Canceled signaling request as room is deleted or permission error.");
+            }
         }
 
         // シグナリングサーバーからのメッセージを受信時

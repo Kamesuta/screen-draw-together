@@ -17,5 +17,11 @@ namespace ScreenDrawTogether
         {
             Frame.NavigationService.GoBack();
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // TODO: ちゃんとした終了処理。「終了しています...」みたいなのを表示する
+            //Application.Current.Shutdown();
+        }
     }
 }
