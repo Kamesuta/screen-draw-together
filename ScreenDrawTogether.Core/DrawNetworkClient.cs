@@ -127,17 +127,15 @@ public abstract class DrawNetworkClient : IDisposable
             }
         };
 
-        // Firebase Realtime Database の設定を作成
-        var firebaseConfig = new FirebaseConfig()
-        {
-            BasePath = RoutingInfo.DatabasePath,
-            AuthSecret = Auth.ClientIdToken,
-        };
-
         // シグナリングコネクターを作成
         var connector = new WebRTCFirebaseSignaling.SignalingConnector(Auth.ClientId)
         {
-            FirebaseConfig = firebaseConfig,
+            CreateFirebaseConfig = async () => new FirebaseConfig()
+            {
+                // Firebase Realtime Database の設定を作成
+                BasePath = RoutingInfo.DatabasePath,
+                AuthSecret = await Auth.ClientUser.GetIdTokenAsync(),
+            },
             CreatePeerConnection = () => CreatePeerConnection(config),
         };
 

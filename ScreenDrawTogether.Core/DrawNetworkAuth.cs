@@ -1,9 +1,5 @@
-﻿using Firebase.Auth.Repository;
-using Firebase.Auth;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Firebase.Auth;
+using Firebase.Auth.Repository;
 using System.Threading.Tasks;
 
 namespace ScreenDrawTogether.Core;
@@ -25,24 +21,22 @@ public class DrawNetworkAuth
     private static readonly string AuthenticationDataPath = "screen-draw-together";
 
     /// <summary>
-    /// クライアントID
+    /// Firebase資格情報ユーザー
     /// </summary>
-    public string ClientId { get; }
+    public User ClientUser { get; }
 
     /// <summary>
-    /// トークン
+    /// クライアントID
     /// </summary>
-    public string ClientIdToken { get; }
+    public string ClientId => ClientUser.Uid;
 
     /// <summary>
     /// コンストラクタ
     /// </summary>
-    /// <param name="clientId">クライアントID</param>
-    /// <param name="clientIdToken">トークン</param>
-    public DrawNetworkAuth(string clientId, string clientIdToken)
+    /// <param name="clientUser">Firebase資格情報ユーザー</param>
+    private DrawNetworkAuth(User clientUser)
     {
-        ClientId = clientId;
-        ClientIdToken = clientIdToken;
+        ClientUser = clientUser;
     }
 
     /// <summary>
@@ -65,27 +59,24 @@ public class DrawNetworkAuth
         var authClient = new FirebaseAuthClient(authConfig);
 
         // ログインを行う
-        User user;
+        User clientUser;
         if (authClient.User != null)
         {
             // 既にログイン済みの場合はローカルに保存されたログイン情報を使用
             Logger.Info("Use existing login.");
-            user = authClient.User;
+            clientUser = authClient.User;
         }
         else
         {
             // ログインしていない場合は新規匿名ログイン
             Logger.Info("Signing in anonymously.");
             var cred = await authClient.SignInAnonymouslyAsync();
-            user = cred.User;
+            clientUser = cred.User;
         }
-        // ログインしたユーザーのUIDを取得
-        var clientId = user.Uid;
-        // トークンを更新して取得
-        var clientIdToken = await user.GetIdTokenAsync();
-        Logger.Info($"Client ID is {clientId}");
+
+        Logger.Info($"Client ID is {clientUser.Uid}");
 
         // 認証情報を返す
-        return new DrawNetworkAuth(clientId, clientIdToken);
+        return new DrawNetworkAuth(clientUser);
     }
 }

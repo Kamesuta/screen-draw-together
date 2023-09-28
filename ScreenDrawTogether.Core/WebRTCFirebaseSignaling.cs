@@ -1,13 +1,11 @@
-using System;
-using System.Drawing.Drawing2D;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using FireSharp.Core;
 using FireSharp.Core.Config;
 using FireSharp.Core.Exceptions;
 using SIPSorcery.Net;
-using ZXing;
+using System;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace ScreenDrawTogether.Core;
 
@@ -33,13 +31,14 @@ public static partial class WebRTCFirebaseSignaling
 
         /// <summary>
         /// Firebaseの設定
+        /// ClientIdTokenが更新されることもあるため、コンフィグは毎回生成する
         /// </summary>
-        public FirebaseConfig? FirebaseConfig { get; set; }
+        public Func<Task<FirebaseConfig>>? CreateFirebaseConfig { get; set; }
 
         /// <summary>
         /// 新しいWebRTCピア接続を作成するために使用される関数デリゲート
         /// </summary>
-        public Func<Task<RTCPeerConnection>> CreatePeerConnection { get; set; } = () => Task.FromResult(new RTCPeerConnection(null));
+        public Func<Task<RTCPeerConnection>>? CreatePeerConnection { get; set; }
 
         /// <summary>
         /// デフォルト コンストラクタ
@@ -64,8 +63,13 @@ public static partial class WebRTCFirebaseSignaling
             // 引数の検証
             if (string.IsNullOrWhiteSpace(theirID)) throw new ArgumentNullException(nameof(theirID));
 
+            // Firebaseの設定が初期化されているか
+            if (CreateFirebaseConfig == null) throw new InvalidOperationException("FirebaseConfig is not initialized.");
+            // WebRTCピアの作成関数が初期化されているか
+            if (CreatePeerConnection == null) throw new InvalidOperationException("CreatePeerConnection is not initialized.");
+
             // Firebaseクライアントを作成します
-            var firebaseClient = new FirebaseClient(FirebaseConfig);
+            var firebaseClient = new FirebaseClient(await CreateFirebaseConfig());
 
             // メッセージ受信イベントを登録
             Logger.Info($"[{OurID[..8]} -> {theirID[..8]}]: Sending connection requested.");
@@ -113,8 +117,13 @@ public static partial class WebRTCFirebaseSignaling
         /// </summary>
         public async Task<SignalingHost> StartAsHost()
         {
+            // Firebaseの設定が初期化されているか
+            if (CreateFirebaseConfig == null) throw new InvalidOperationException("FirebaseConfig is not initialized.");
+            // WebRTCピアの作成関数が初期化されているか
+            if (CreatePeerConnection == null) throw new InvalidOperationException("CreatePeerConnection is not initialized.");
+
             // Firebaseクライアントを作成します
-            var firebaseClient = new FirebaseClient(FirebaseConfig);
+            var firebaseClient = new FirebaseClient(await CreateFirebaseConfig());
 
             // ルームを初期化します
             Logger.Info($"[{OurID[..8]} -> Firebase]: DELETE rooms/{OurID}");
