@@ -21,6 +21,8 @@ public partial class Host : Page
     private DrawSyncInkCanvas? _syncCanvas;
     // ピア
     DrawNetworkPeer? _peer;
+    // クライアント
+    DrawNetworkClient? _client;
     // タイマー
     private DispatcherTimer? _timer;
     // スタート時間
@@ -69,8 +71,11 @@ public partial class Host : Page
             }));
         };
 
+        // クライアントを作成
+        _client = new(_peer);
+
         // ウィンドウを表示
-        _syncCanvas = new(_peer);
+        _syncCanvas = new(_client);
         _syncCanvas.ToClickThroughWindow();
         _syncCanvas.SetRect(_hWndRect.Rect);
         _syncCanvas.Show();
@@ -86,6 +91,10 @@ public partial class Host : Page
         // ウィンドウを閉じる
         _syncCanvas?.Close();
         _syncCanvas = null;
+
+        // クライアントを閉じる
+        _client?.Dispose();
+        _client = null;
 
         // ピアを閉じる
         _peer?.Dispose();

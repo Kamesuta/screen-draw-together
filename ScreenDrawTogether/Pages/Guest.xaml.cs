@@ -18,6 +18,8 @@ public partial class Guest : Page
     private DrawSyncInkCanvas? _syncCanvas;
     // ピア
     DrawNetworkPeer.Guest? _peer;
+    // クライアント
+    DrawNetworkClient? _client;
 
     public Guest()
     {
@@ -69,8 +71,11 @@ public partial class Guest : Page
             }));
         };
 
+        // クライアントを作成
+        _client = new(_peer);
+
         // ウィンドウを作成
-        _syncCanvas = new(_peer);
+        _syncCanvas = new(_client);
 
         // 自動的に招待開始
         StartJoin();
@@ -81,6 +86,10 @@ public partial class Guest : Page
         // ウィンドウを閉じる
         _syncCanvas?.Close();
         _syncCanvas = null;
+
+        // クライアントを閉じる
+        _client?.Dispose();
+        _client = null;
 
         // ピアを閉じる
         _peer?.Dispose();

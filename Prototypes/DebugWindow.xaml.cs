@@ -162,8 +162,11 @@ namespace ScreenDrawTogether.Prototype
                     }));
                 };
 
+                // クライアント作成
+                DrawNetworkClient client = new(peer);
+
                 // キャンバスを作成
-                canvas = new DrawSyncInkCanvas(peer)
+                canvas = new DrawSyncInkCanvas(client)
                 {
                     Background = Brushes.White,
                     WindowStyle = WindowStyle.SingleBorderWindow,
@@ -175,6 +178,7 @@ namespace ScreenDrawTogether.Prototype
                 // キャンバス終了時にピアを切断
                 canvas.Closed += (sender, e) =>
                 {
+                    client.Dispose();
                     peer.Dispose();
                 };
             }
