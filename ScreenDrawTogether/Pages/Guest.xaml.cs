@@ -16,8 +16,8 @@ public partial class Guest : Page
 {
     // キャンバス
     private DrawSyncInkCanvas? _syncCanvas;
-    // クライアント
-    DrawNetworkClient.Guest? _client;
+    // ピア
+    DrawNetworkPeer.Guest? _peer;
 
     public Guest()
     {
@@ -44,11 +44,11 @@ public partial class Guest : Page
             return;
         }
 
-        // ゲストクライアントを作成
-        _client = new DrawNetworkClient.Guest(routingInfo, auth);
+        // ゲストピアを作成
+        _peer = new DrawNetworkPeer.Guest(routingInfo, auth);
 
         // 切断時
-        _client.OnHostClosed += (state) =>
+        _peer.OnHostClosed += (state) =>
         {
             // UIスレッドで実行
             Dispatcher.BeginInvoke(new Action(() =>
@@ -59,7 +59,7 @@ public partial class Guest : Page
             }));
         };
         // 接続時
-        _client.OnConnected += () =>
+        _peer.OnConnected += () =>
         {
             // UIスレッドで実行
             Dispatcher.BeginInvoke(new Action(() =>
@@ -70,7 +70,7 @@ public partial class Guest : Page
         };
 
         // ウィンドウを作成
-        _syncCanvas = new(_client);
+        _syncCanvas = new(_peer);
 
         // 自動的に招待開始
         StartJoin();
@@ -82,19 +82,19 @@ public partial class Guest : Page
         _syncCanvas?.Close();
         _syncCanvas = null;
 
-        // クライアントを閉じる
-        _client?.Dispose();
-        _client = null;
+        // ピアを閉じる
+        _peer?.Dispose();
+        _peer = null;
     }
 
     private void GuestButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_client == null)
+        if (_peer == null)
         {
             return;
         }
 
-        if (_client.IsSignaling)
+        if (_peer.IsSignaling)
         {
             // シグナリング中なら停止
             StopJoin();
@@ -111,7 +111,7 @@ public partial class Guest : Page
     /// </summary>
     private async void StartJoin()
     {
-        if (_client == null)
+        if (_peer == null)
         {
             return;
         }
@@ -124,7 +124,7 @@ public partial class Guest : Page
         }
 
         // ルームIDを設定
-        _client.RoomId = roomId;
+        _peer.RoomId = roomId;
         // キャンバスの位置を設定
         _syncCanvas?.SetRect(rect);
         _syncCanvas?.Show();
@@ -132,7 +132,7 @@ public partial class Guest : Page
         // シグナリング開始
         try
         {
-            await _client.StartSignaling();
+            await _peer.StartSignaling();
         }
         catch (FirebaseException)
         {
@@ -155,7 +155,7 @@ public partial class Guest : Page
     private void StopJoin()
     {
         // シグナリングを停止
-        _client?.StopSignaling();
+        _peer?.StopSignaling();
 
         // ボタン名を変更
         GuestButton.Content = "参加する";

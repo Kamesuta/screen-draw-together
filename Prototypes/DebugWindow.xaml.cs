@@ -119,17 +119,17 @@ namespace ScreenDrawTogether.Prototype
                 // ルームIDを表示
                 RoomIDTextBox.Text = roomId ?? auth.ClientId;
 
-                // クライアントを作成
-                DrawNetworkClient client = roomId == null
+                // ピアを作成
+                DrawNetworkPeer peer = roomId == null
                         // ホスト
-                        ? new DrawNetworkClient.Host(routingInfo, auth)
+                        ? new DrawNetworkPeer.Host(routingInfo, auth)
                         // ゲスト
-                        : new DrawNetworkClient.Guest(routingInfo, auth) { RoomId = roomId };
+                        : new DrawNetworkPeer.Guest(routingInfo, auth) { RoomId = roomId };
 
                 // シグナリング開始
                 try
                 {
-                    await client.StartSignaling();
+                    await peer.StartSignaling();
                 }
                 catch (FirebaseException)
                 {
@@ -138,7 +138,7 @@ namespace ScreenDrawTogether.Prototype
                 }
 
                 // 切断時
-                client.OnHostClosed += (state) =>
+                peer.OnHostClosed += (state) =>
                 {
                     // UIスレッドで実行
                     Dispatcher.BeginInvoke(new Action(() =>
@@ -149,7 +149,7 @@ namespace ScreenDrawTogether.Prototype
                     }));
                 };
                 // 接続時
-                client.OnConnected += () =>
+                peer.OnConnected += () =>
                 {
                     // UIスレッドで実行
                     Dispatcher.BeginInvoke(new Action(() =>
@@ -163,7 +163,7 @@ namespace ScreenDrawTogether.Prototype
                 };
 
                 // キャンバスを作成
-                canvas = new DrawSyncInkCanvas(client)
+                canvas = new DrawSyncInkCanvas(peer)
                 {
                     Background = Brushes.White,
                     WindowStyle = WindowStyle.SingleBorderWindow,
@@ -172,10 +172,10 @@ namespace ScreenDrawTogether.Prototype
                 // タイトルにプリセットIDを表示
                 canvas.Title += $" - {(roomId == null ? "Host" : "Guest")} (Preset: {presetId})";
                 canvas.Show();
-                // キャンバス終了時にクライアントを切断
+                // キャンバス終了時にピアを切断
                 canvas.Closed += (sender, e) =>
                 {
-                    client.Dispose();
+                    peer.Dispose();
                 };
             }
             else

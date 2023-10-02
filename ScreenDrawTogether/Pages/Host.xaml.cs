@@ -19,8 +19,8 @@ public partial class Host : Page
     private readonly HWndRect _hWndRect;
     // キャンバス
     private DrawSyncInkCanvas? _syncCanvas;
-    // クライアント
-    DrawNetworkClient? _client;
+    // ピア
+    DrawNetworkPeer? _peer;
     // タイマー
     private DispatcherTimer? _timer;
     // スタート時間
@@ -52,11 +52,11 @@ public partial class Host : Page
             return;
         }
 
-        // ホストクライアントを作成
-        _client = new DrawNetworkClient.Host(routingInfo, auth);
+        // ホストピアを作成
+        _peer = new DrawNetworkPeer.Host(routingInfo, auth);
 
         // 接続時
-        _client.OnConnected += () =>
+        _peer.OnConnected += () =>
         {
             // UIスレッドで実行
             Dispatcher.BeginInvoke(new Action(() =>
@@ -70,7 +70,7 @@ public partial class Host : Page
         };
 
         // ウィンドウを表示
-        _syncCanvas = new(_client);
+        _syncCanvas = new(_peer);
         _syncCanvas.ToClickThroughWindow();
         _syncCanvas.SetRect(_hWndRect.Rect);
         _syncCanvas.Show();
@@ -87,20 +87,20 @@ public partial class Host : Page
         _syncCanvas?.Close();
         _syncCanvas = null;
 
-        // クライアントを閉じる
-        _client?.Dispose();
-        _client = null;
+        // ピアを閉じる
+        _peer?.Dispose();
+        _peer = null;
     }
 
     // 招待開始/終了ボタン
     private void HostButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_client == null)
+        if (_peer == null)
         {
             return;
         }
 
-        if (_client.IsSignaling)
+        if (_peer.IsSignaling)
         {
             // シグナリング中なら停止
             StopInvite();
@@ -117,7 +117,7 @@ public partial class Host : Page
     /// </summary>
     private async void StartInvite()
     {
-        if (_client == null)
+        if (_peer == null)
         {
             return;
         }
@@ -125,7 +125,7 @@ public partial class Host : Page
         // シグナリング開始
         try
         {
-            await _client.StartSignaling();
+            await _peer.StartSignaling();
         }
         catch (FirebaseException)
         {
@@ -134,7 +134,7 @@ public partial class Host : Page
         }
 
         // QRコードを表示
-        _syncCanvas?.SetInviteRoomId(_client.Auth.ClientId);
+        _syncCanvas?.SetInviteRoomId(_peer.Auth.ClientId);
 
         // ボタン名を変更
         HostButton.Content = "招待を停止する";
@@ -179,7 +179,7 @@ public partial class Host : Page
         _timer = null;
 
         // シグナリングを停止
-        _client?.StopSignaling();
+        _peer?.StopSignaling();
 
         // ボタン名を変更
         HostButton.Content = "友達を招待する";

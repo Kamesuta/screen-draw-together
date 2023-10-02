@@ -16,9 +16,9 @@ namespace ScreenDrawTogether.Common;
 public partial class DrawSyncInkCanvas : Window
 {
     /// <summary>
-    /// クライアント
+    /// ピア
     /// </summary>
-    public DrawNetworkClient Client { get; private set; }
+    public DrawNetworkPeer Peer { get; private set; }
 
     /// <summary>
     /// ストローク
@@ -58,14 +58,14 @@ public partial class DrawSyncInkCanvas : Window
     /// <param name="routingInfo">接続情報</param>
     /// <param name="auth">認証情報</param>
     /// <param name="roomId">ルームID</param>
-    public DrawSyncInkCanvas(DrawNetworkClient client)
+    public DrawSyncInkCanvas(DrawNetworkPeer peer)
     {
         InitializeComponent();
 
-        Client = client;
+        Peer = peer;
 
         // 他人の入力: メッセージ受信時のイベントを登録
-        Client.OnMessage += OnMessage;
+        Peer.OnMessage += OnMessage;
 
         // 自分の入力: ストローク開始/終了/移動時のイベントを登録
         InkCanvas.CanvasStylusDown += StylusPlugin_StylusDown;
@@ -76,7 +76,7 @@ public partial class DrawSyncInkCanvas : Window
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
         // 他人の入力: ウィンドウを閉じるときにメッセージ受信時のイベントを解除
-        Client.OnMessage -= OnMessage;
+        Peer.OnMessage -= OnMessage;
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public partial class DrawSyncInkCanvas : Window
         memoryStream.WriteByte((byte)StrokePacketType.StrokeDown);
 
         // 送信
-        Client?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
+        Peer?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public partial class DrawSyncInkCanvas : Window
             writer.Write(point.Y);
 
             // 送信
-            Client?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
+            Peer?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
         }
     }
 
@@ -148,7 +148,7 @@ public partial class DrawSyncInkCanvas : Window
         memoryStream.WriteByte((byte)StrokePacketType.StrokeDown);
 
         // 送信
-        Client?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
+        Peer?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
     }
 
     /// <summary>

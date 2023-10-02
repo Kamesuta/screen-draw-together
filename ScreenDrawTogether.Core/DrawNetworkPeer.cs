@@ -9,7 +9,7 @@ namespace ScreenDrawTogether.Core;
 /// <summary>
 /// ネットワーク接続
 /// </summary>
-public abstract class DrawNetworkClient : IDisposable
+public abstract class DrawNetworkPeer : IDisposable
 {
     /// <summary>
     /// ネットワーク用ロガー
@@ -52,7 +52,7 @@ public abstract class DrawNetworkClient : IDisposable
     public event Action OnConnected = delegate { };
 
     /// <summary>
-    /// クライアントが終了したときのイベント
+    /// ピアが終了したときのイベント
     /// </summary>
     public event Action OnDispose = delegate { };
 
@@ -71,7 +71,7 @@ public abstract class DrawNetworkClient : IDisposable
     /// </summary>
     /// <param name="routingInfo">接続情報</param>
     /// <param name="auth">認証情報</param>
-    private DrawNetworkClient(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth)
+    private DrawNetworkPeer(DrawNetworkRoutingInfo routingInfo, DrawNetworkAuth auth)
     {
         RoutingInfo = routingInfo;
         Auth = auth;
@@ -215,9 +215,9 @@ public abstract class DrawNetworkClient : IDisposable
     }
 
     /// <summary>
-    /// ホストクライアント
+    /// ホストピア
     /// </summary>
-    public class Host : DrawNetworkClient
+    public class Host : DrawNetworkPeer
     {
         /// <summary>
         /// ルームの待ち受けを行うシグナリングホスト (起動中は接続数を1消費します)
@@ -288,9 +288,9 @@ public abstract class DrawNetworkClient : IDisposable
     }
 
     /// <summary>
-    /// ゲストクライアント
+    /// ゲストピア
     /// </summary>
-    public class Guest : DrawNetworkClient
+    public class Guest : DrawNetworkPeer
     {
         /// <summary>
         /// ルームID
