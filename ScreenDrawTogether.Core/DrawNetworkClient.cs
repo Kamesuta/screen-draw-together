@@ -85,6 +85,7 @@ public abstract class DrawNetworkClient : IDisposable
     {
         // 終了時のイベントを発火
         OnDispose();
+        OnDispose = delegate { };
 
         GC.SuppressFinalize(this);
     }
@@ -240,6 +241,7 @@ public abstract class DrawNetworkClient : IDisposable
         {
             // 終了時のイベントを発火
             base.OnDispose();
+
             // シグナリングを終了
             RoomHost?.Dispose();
             RoomHost = null;
@@ -321,6 +323,7 @@ public abstract class DrawNetworkClient : IDisposable
             // 終了時にシグナリングを行っていれば終了する
             Signaler?.Dispose();
             Signaler = null;
+
             // すべてのピアを切断
             PeerConnections.ForEach(peer => peer.Dispose());
             PeerConnections.Clear();

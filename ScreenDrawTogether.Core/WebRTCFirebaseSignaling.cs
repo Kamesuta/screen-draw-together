@@ -101,11 +101,12 @@ public static partial class WebRTCFirebaseSignaling
             // シグナリングサーバーからのメッセージを受信します
             Logger.Info($"[{OurID[..8]} -> Firebase]: Starting as guest. (rooms/{theirID}/signal/{OurID}/host)");
             onSignal += handle.OnSignal;
-            await firebaseClient.OnAsync(
+            var stream = await firebaseClient.OnAsync(
                 $"rooms/{theirID}/signal/{OurID}/host",
                 added: (s, args, context) => onSignal(args.Path, args.Data),
                 changed: (s, args, context) => onSignal(args.Path, args.Data)
             ).ConfigureAwait(false);
+            handle.OnDispose += stream.Dispose;
 
             // シグナリングオブジェクトを返します
             return handle;
@@ -218,11 +219,12 @@ public static partial class WebRTCFirebaseSignaling
             // シグナリングサーバーからのメッセージを受信します
             Logger.Info($"[{OurID[..8]} -> Firebase]: Starting as host. (rooms/{OurID})");
             onSignal += OnHostSignal;
-            await firebaseClient.OnAsync(
+            var stream = await firebaseClient.OnAsync(
                 $"rooms/{OurID}",
                 added: (s, args, context) => onSignal(args.Path, args.Data),
                 changed: (s, args, context) => onSignal(args.Path, args.Data)
             ).ConfigureAwait(false);
+            host.OnDispose += stream.Dispose;
 
             // ゲスト待ち受けオブジェクトを返します
             return host;
@@ -273,6 +275,7 @@ public static partial class WebRTCFirebaseSignaling
 
             // 終了イベント
             OnDispose();
+            OnDispose = delegate { };
 
             GC.SuppressFinalize(this);
         }
@@ -315,7 +318,7 @@ public static partial class WebRTCFirebaseSignaling
         public RTCPeerConnection PeerConnection { get; set; }
 
         /// <summary>
-        /// シグナリング終了時に行う処理 (1～2回呼ばれます)
+        /// シグナリング終了時に行う処理
         /// </summary>
         public event Action OnDispose = delegate { };
 
@@ -347,6 +350,7 @@ public static partial class WebRTCFirebaseSignaling
 
             // 終了イベント
             OnDispose();
+            OnDispose = delegate { };
 
             GC.SuppressFinalize(this);
         }
