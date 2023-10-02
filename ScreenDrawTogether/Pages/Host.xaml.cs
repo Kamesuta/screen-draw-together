@@ -55,17 +55,6 @@ public partial class Host : Page
         // ホストクライアントを作成
         _client = new DrawNetworkClient.Host(routingInfo, auth);
 
-        // 切断時
-        _client.OnHostClosed += (state) =>
-        {
-            // UIスレッドで実行
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                NotifyError("通信が切断されました");
-                // TODO: 切断された時メインメニューに戻す
-                StopInvite();
-            }));
-        };
         // 接続時
         _client.OnConnected += () =>
         {

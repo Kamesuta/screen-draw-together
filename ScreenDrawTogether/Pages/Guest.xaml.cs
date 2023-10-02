@@ -139,6 +139,11 @@ public partial class Guest : Page
             NotifyError("接続に失敗しました。\nホストの共有が終了している可能性があります。");
             return;
         }
+        catch (ObjectDisposedException)
+        {
+            NotifyError("接続に失敗しました。\n接続中にキャンセルされました。");
+            return;
+        }
 
         // ボタン名を変更
         GuestButton.Content = "接続中...";
