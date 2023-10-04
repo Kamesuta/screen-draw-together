@@ -1,13 +1,11 @@
 ﻿using ScreenDrawTogether.Core;
-using SIPSorcery.Net;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Input.StylusPlugIns;
+using System.Windows.Threading;
 using static ScreenDrawTogether.Core.DrawNetworkClient;
 
 namespace ScreenDrawTogether.Common;
@@ -22,10 +20,11 @@ public partial class DrawSyncInkCanvas : Window
     /// </summary>
     public DrawNetworkClient Client { get; private set; }
 
-    /// <summary>
-    /// ストローク
-    /// </summary>
-    private Stroke? stroke;
+    // ストローク
+    private Stroke? _stroke;
+
+    // タイマー
+    private DispatcherTimer? _timer;
 
     /// <summary>
     /// コンストラクタ
@@ -45,10 +44,22 @@ public partial class DrawSyncInkCanvas : Window
         InkCanvas.CanvasStylusDown += (e) => Client.SendStrokeOff();
         InkCanvas.CanvasStylusUp += (e) => Client.SendStrokeOff();
         InkCanvas.CanvasStylusMove += (e) => Client.SendStrokeAddPoints(e.GetStylusPoints().Select(point => new DrawPoint { X = point.X, Y = point.Y }));
+
+        // 定期的にパケットを送信
+        _timer = new DispatcherTimer(DispatcherPriority.Normal)
+        {
+            Interval = TimeSpan.FromMilliseconds(50),
+        };
+        _timer.Tick += (sender, e) => Client.SendPacket();
+        _timer.Start();
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
+        // タイマーを停止
+        _timer?.Stop();
+        _timer = null;
+
         // 他人の入力: ウィンドウを閉じるときにメッセージ受信時のイベントを解除
         Client.OnStrokeOff -= StrokeOff;
         Client.OnStrokeAddPoints -= StrokeAddPoints;
@@ -81,7 +92,7 @@ public partial class DrawSyncInkCanvas : Window
     private void StrokeOff()
     {
         // ストロークを切る
-        stroke = null;
+        _stroke = null;
     }
 
     /// <summary>
@@ -97,21 +108,21 @@ public partial class DrawSyncInkCanvas : Window
             foreach (var point in points)
             {
                 // ストロークがなければ作成
-                if (stroke == null)
+                if (_stroke == null)
                 {
                     // 新しいストロークを作成
-                    stroke = new(new(new List<StylusPoint>() { new StylusPoint(point.X, point.Y) }))
+                    _stroke = new(new(new List<StylusPoint>() { new StylusPoint(point.X, point.Y) }))
                     {
                         // デフォルトの描画属性を使用
                         DrawingAttributes = InkCanvas.DefaultDrawingAttributes
                     };
 
                     // ストロークを追加
-                    InkCanvas.Strokes.Add(stroke);
+                    InkCanvas.Strokes.Add(_stroke);
                 }
                 else
                 {
-                    stroke.StylusPoints.Add(new StylusPoint(point.X, point.Y));
+                    _stroke.StylusPoints.Add(new StylusPoint(point.X, point.Y));
                 }
             }
         }));

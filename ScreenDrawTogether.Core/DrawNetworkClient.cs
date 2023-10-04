@@ -20,10 +20,21 @@ public class DrawNetworkClient : IDisposable
     /// ストロークを離した時
     /// </summary>
     public event Action OnStrokeOff = delegate { };
+
     /// <summary>
     /// ストロークを書き足した時
     /// </summary>
     public event Action<IEnumerable<DrawPoint>> OnStrokeAddPoints = delegate { };
+
+    /// <summary>
+    /// 送信キューメモリストリーム
+    /// </summary>
+    private MemoryStream? sendQueueStream;
+
+    /// <summary>
+    /// 送信用バイナリライター
+    /// </summary>
+    private BinaryWriter? sendQueueWriter;
 
     /// <summary>
     /// コンストラクタ
@@ -31,6 +42,10 @@ public class DrawNetworkClient : IDisposable
     public DrawNetworkClient(DrawNetworkPeer peer)
     {
         Peer = peer;
+
+        // 送信キューを作成
+        sendQueueStream = new MemoryStream();
+        sendQueueWriter = new BinaryWriter(sendQueueStream);
 
         // メッセージ受信時のイベントを登録
         Peer.OnMessage += OnMessage;
@@ -41,6 +56,12 @@ public class DrawNetworkClient : IDisposable
     {
         Peer.OnMessage -= OnMessage;
 
+        // 送信キューを破棄
+        sendQueueWriter?.Dispose();
+        sendQueueWriter = null;
+        sendQueueStream?.Dispose();
+        sendQueueStream = null;
+
         GC.SuppressFinalize(this);
     }
 
@@ -48,10 +69,15 @@ public class DrawNetworkClient : IDisposable
     /// パケットを送信する
     /// </summary>
     /// <param name="stream">情報</param>
-    private void SendPacket(MemoryStream memoryStream)
+    public void SendPacket()
     {
+        // 送信キューが空なら何もしない
+        if (sendQueueStream == null || sendQueueStream.Length == 0) return;
+
         // 送信
-        Peer?.DataChannels.ForEach(channel => channel.send(memoryStream.GetBuffer()));
+        Peer?.DataChannels.ForEach(channel => channel.send(sendQueueStream.ToArray()));
+        // メモリをクリア
+        sendQueueStream.SetLength(0);
     }
 
     /// <summary>
@@ -59,13 +85,10 @@ public class DrawNetworkClient : IDisposable
     /// </summary>
     public void SendStrokeOff()
     {
-        // パケットを作成
-        using var memoryStream = new MemoryStream();
-        using var writer = new BinaryWriter(memoryStream);
+        if (sendQueueWriter == null) return;
+
         // パケットタイプ
-        writer.Write((byte)StrokePacketType.StrokeOff);
-        // 送信
-        SendPacket(memoryStream);
+        sendQueueWriter.Write((byte)StrokePacketType.StrokeOff);
     }
 
     /// <summary>
@@ -74,21 +97,18 @@ public class DrawNetworkClient : IDisposable
     /// <param name="points">点</param>
     public void SendStrokeAddPoints(IEnumerable<DrawPoint> points)
     {
-        // パケットを作成
-        using var memoryStream = new MemoryStream();
-        using var writer = new BinaryWriter(memoryStream);
+        if (sendQueueWriter == null) return;
+
         // パケットタイプ
-        writer.Write((byte)StrokePacketType.StrokeAddPoints);
+        sendQueueWriter.Write((byte)StrokePacketType.StrokeAddPoints);
         // ストロークのポイント数
-        writer.Write(points.Count());
+        sendQueueWriter.Write(points.Count());
         // ストロークのポイント
         foreach (var stylusPoint in points)
         {
-            writer.Write(stylusPoint.X);
-            writer.Write(stylusPoint.Y);
+            sendQueueWriter.Write(stylusPoint.X);
+            sendQueueWriter.Write(stylusPoint.Y);
         }
-        // 送信
-        SendPacket(memoryStream);
     }
 
     /// <summary>
@@ -101,38 +121,43 @@ public class DrawNetworkClient : IDisposable
     {
         // バイナリからストロークパケットを復元
         using var stream = new BinaryReader(new MemoryStream(data));
-        // パケットタイプを読み込み
-        StrokePacketType packetType = (StrokePacketType)stream.ReadByte();
 
-        // パケットタイプによって処理を分岐
-        switch (packetType)
+        // ストリームの終端に達するまで繰り返す
+        while (stream.BaseStream.Position < stream.BaseStream.Length)
         {
-            // ストローク開始/終了時はストロークを切る
-            case StrokePacketType.StrokeOff:
-                {
-                    OnStrokeOff();
-                }
-                break;
+            // パケットタイプを読み込み
+            StrokePacketType packetType = (StrokePacketType)stream.ReadByte();
 
-            // ストローク移動時はポイントを追加
-            case StrokePacketType.StrokeAddPoints:
-                {
-                    // ストロークのポイント数を読み込み
-                    int count = stream.ReadInt32();
-                    // ストロークのポイントを読み込み
-                    var points = new List<DrawPoint>();
-                    for (int i = 0; i < count; i++)
+            // パケットタイプによって処理を分岐
+            switch (packetType)
+            {
+                // ストローク開始/終了時はストロークを切る
+                case StrokePacketType.StrokeOff:
                     {
-                        points.Add(new()
-                        {
-                            X = stream.ReadDouble(),
-                            Y = stream.ReadDouble(),
-                        });
+                        OnStrokeOff();
                     }
-                    // ストロークを追加
-                    OnStrokeAddPoints(points);
-                }
-                break;
+                    break;
+
+                // ストローク移動時はポイントを追加
+                case StrokePacketType.StrokeAddPoints:
+                    {
+                        // ストロークのポイント数を読み込み
+                        int count = stream.ReadInt32();
+                        // ストロークのポイントを読み込み
+                        var points = new List<DrawPoint>();
+                        for (int i = 0; i < count; i++)
+                        {
+                            points.Add(new()
+                            {
+                                X = stream.ReadDouble(),
+                                Y = stream.ReadDouble(),
+                            });
+                        }
+                        // ストロークを追加
+                        OnStrokeAddPoints(points);
+                    }
+                    break;
+            }
         }
     }
 

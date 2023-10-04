@@ -194,11 +194,11 @@ public abstract class DrawNetworkPeer : IDisposable
         // データチャネルの接続状態が変化したときのイベントを設定
         peerConnection.onconnectionstatechange += (state) =>
         {
-            // シグナリングが完了(接続が確立された or 切断された)場合、シグナリングを終了します
+            // 切断された場合、接続を終了します
             if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.disconnected)
             {
                 Logger.Info($"Exiting connection as connection state is now {state}.");
-                // シグナリングを終了します
+                // 接続を終了します
                 peerConnection.Dispose();
                 DataChannels.Remove(chatChannel);
 
